@@ -70,6 +70,51 @@ router.put("/firstTimeRegister", (req, res) => {
 		});
 });
 
-router.post("/login", (req, res) => {});
+router.post("/login", (req, res) => {
+	const { email, password } = req.body;
+
+	User.findOne({ email })
+		.then((user) => {
+			console.log(email);
+			if (!user) {
+				return res.status(404).send("User not found");
+			}
+
+			bcrypt
+				.compare(password, user.password)
+				.then((passwordCheck) => {
+					if (!passwordCheck) {
+						return res.status(400).send({
+							message: "Passwords does not match",
+							error,
+						});
+					}
+
+					const token = jwt.sign(
+						{
+							userId: user._id,
+							userEmail: user.email,
+						},
+						"iotSecretKey",
+						{ expiresIn: "24h" }
+					);
+
+					res.status(200).send({
+						message: "Login Successful",
+						email: user.email,
+						token,
+					});
+				})
+				.catch((e) => {
+					res.status(400).send({
+						message: "Passwords does not match",
+						e,
+					});
+				});
+		})
+		.catch((e) => {
+			res.status(404).send(e);
+		});
+});
 
 export default router;

@@ -4,7 +4,7 @@ import "express-async-errors";
 import db from "./db.js";
 import userRoute from "./routes/auth.js";
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 9000;
 const app = express();
 
 db();

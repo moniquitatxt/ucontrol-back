@@ -2,39 +2,52 @@ import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
+import nodemailer from "nodemailer";
+
+function generatePin() {
+	let pin = "";
+	for (let i = 0; i < 6; i++) {
+		pin += Math.floor(Math.random() * 10);
+	}
+	return pin;
+}
 
 const router = express.Router();
 
-router.post("/register", (req, res) => {
-	bcrypt
-		.hash(req.body.password, 10)
-		.then((hashedPassword) => {
-			const user = new User({
-				email: req.body.email,
-				password: hashedPassword,
-			});
+router.post("/sendCode", (req, res) => {
+	const { email } = req.body;
+	User.findOne({ email }).then(async (user) => {
+		if (!user) {
+			return res.status(404).send("Correo inválido");
+		}
+		if (user.registered) {
+			return res.status(404).send("La contraseña ya fue creada anteriormente");
+		}
 
-			user
-				.save()
-				.then((result) => {
-					res.status(201).send({
-						message: "User Created Successfully",
-						result,
-					});
-				})
-				.catch((error) => {
-					res.status(500).send({
-						message: "Error creating user",
-						error,
-					});
-				});
-		})
-		.catch((e) => {
-			res.status(500).send({
-				message: "Password was not hashed successfully",
-				e,
-			});
+		const pin = generatePin();
+		const transporter = nodemailer.createTransport({
+			service: "Gmail",
+			auth: {
+				user: "ucontrol.iotsystem@gmail.com",
+				pass: "jhszraxaqmsmrdpl",
+			},
 		});
+
+		const mailOptions = {
+			from: "ucontrol.iotsystem@gmail.com",
+			to: email,
+			subject: "Código PIN de 6 dígitos",
+			text: `Tu código PIN es: ${pin}`,
+		};
+
+		// Enviar el mensaje de correo electrónico
+		const info = await transporter.sendMail(mailOptions);
+
+		return res.status(200).send({
+			message: "Código enviado",
+			code: pin,
+		});
+	});
 });
 
 router.put("/firstTimeRegister", (req, res) => {
@@ -75,7 +88,6 @@ router.post("/login", (req, res) => {
 
 	User.findOne({ email })
 		.then((user) => {
-			console.log(email);
 			if (!user) {
 				return res.status(404).send("User not found");
 			}
@@ -99,9 +111,11 @@ router.post("/login", (req, res) => {
 						{ expiresIn: "24h" }
 					);
 
+					const { password, ...userData } = user;
+
 					res.status(200).send({
 						message: "Login Successful",
-						email: user.email,
+						user: userData,
 						token,
 					});
 				})

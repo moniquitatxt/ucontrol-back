@@ -111,11 +111,9 @@ router.post("/login", (req, res) => {
 						{ expiresIn: "24h" }
 					);
 
-					const { password, ...userData } = user;
-
 					res.status(200).send({
 						message: "Login Successful",
-						user: userData,
+						user: user,
 						token,
 					});
 				})

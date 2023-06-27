@@ -89,7 +89,10 @@ router.post("/login", (req, res) => {
 	User.findOne({ email })
 		.then((user) => {
 			if (!user) {
-				return res.status(404).send("User not found");
+				return res.status(400).send({
+					message: "Usuario no encontrado",
+					error,
+				});
 			}
 
 			bcrypt
@@ -97,7 +100,7 @@ router.post("/login", (req, res) => {
 				.then((passwordCheck) => {
 					if (!passwordCheck) {
 						return res.status(400).send({
-							message: "Passwords does not match",
+							message: "Contraseña inválida",
 							error,
 						});
 					}
@@ -112,20 +115,24 @@ router.post("/login", (req, res) => {
 					);
 
 					res.status(200).send({
-						message: "Login Successful",
+						message: "Inicio de sesión exitoso",
 						user: user,
 						token,
 					});
 				})
 				.catch((e) => {
 					res.status(400).send({
-						message: "Passwords does not match",
+						message: "Contraseña inválida",
 						e,
 					});
 				});
 		})
 		.catch((e) => {
-			res.status(404).send(e);
+			console.log(e);
+			res.status(404).send({
+				message: "Usuario no encontrado",
+				e,
+			});
 		});
 });
 

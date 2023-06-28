@@ -1,6 +1,5 @@
 import express from "express";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 import nodemailer from "nodemailer";
 
@@ -18,10 +17,12 @@ router.post("/sendCode", (req, res) => {
 	const { email } = req.body;
 	User.findOne({ email }).then(async (user) => {
 		if (!user) {
-			return res.status(404).send("Correo inválido");
+			return res.status(404).send({ message: "Correo inválido" });
 		}
 		if (user.registered) {
-			return res.status(404).send("La contraseña ya fue creada anteriormente");
+			return res
+				.status(404)
+				.send({ message: "La contraseña ya fue creada anteriormente" });
 		}
 
 		const pin = generatePin();
@@ -57,10 +58,12 @@ router.put("/firstTimeRegister", (req, res) => {
 		.then((user) => {
 			console.log(email);
 			if (!user) {
-				return res.status(404).send("User not found");
+				return res.status(404).send({ message: "Usuario no encontrado" });
 			}
 			if (user.registered) {
-				return res.status(404).send("Password has already been created");
+				return res
+					.status(404)
+					.send({ message: "El usuario ya se registró antes" });
 			} else {
 				bcrypt
 					.hash(password, 10)
@@ -105,19 +108,9 @@ router.post("/login", (req, res) => {
 						});
 					}
 
-					const token = jwt.sign(
-						{
-							userId: user._id,
-							userEmail: user.email,
-						},
-						"iotSecretKey",
-						{ expiresIn: "24h" }
-					);
-
 					res.status(200).send({
 						message: "Inicio de sesión exitoso",
 						user: user,
-						token,
 					});
 				})
 				.catch((e) => {

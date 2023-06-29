@@ -1,12 +1,5 @@
-  /* 
-modified on Dec 29, 2020
-Modified by MehranMaleki from Arduino Examples
-Home
-*/
-
-
-//Libraries
 #include <DHT.h>;
+#include <WiFi.h>;
 
 //Constants
 #define DHTPIN 2            //what pin we're connected to

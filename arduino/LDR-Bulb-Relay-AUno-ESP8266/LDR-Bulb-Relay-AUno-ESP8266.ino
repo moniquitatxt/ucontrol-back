@@ -1,22 +1,22 @@
 #include <SoftwareSerial.h>;
 
-#include <ESP8266WiFi.h>
-#include <PubSubClient.h>
-#include <time.h>
-#include <TZ.h>
-#include <FS.h>
-#include <LittleFS.h>
-#include <CertStoreBearSSL.h>
+#include <ESP8266WiFi.h>;
+#include <PubSubClient.h>;
+#include <time.h>;
+#include <TZ.h>;
+#include <FS.h>;
+#include <LittleFS.h>;
+#include <CertStoreBearSSL.h>;
 
 
-// wifi
+//wifi
 const char* ssid = "luisa";
 const char* password = "123luisa";
 
-// MQTT Server
+//MQTT Server
 const char* mqtt_server = "6f73b3569de64e8c94164637cdc7a301.s2.eu.hivemq.cloud";
-// const char* topicT = "channels/2207179/publish/fields/field1";
-// const char* topicH = "channels/2207179/publish/fields/field2";
+const char* topicT = "channels/2207179/publish/fields/field1";
+const char* topicH = "channels/2207179/publish/fields/field2";
 const char* mqtt_clientid = "ucontrol";
 const char* mqtt_username = "ucontrol";
 const char* mqtt_password = "Ucontrol123";
@@ -44,7 +44,7 @@ char c;
 String dataIn;
 
 void setup_wifi() {
-  delay(10);
+  delay(100);
   // We start by connecting to a WiFi network
   Serial.println();
   Serial.print("Connecting to ");
@@ -52,14 +52,12 @@ void setup_wifi() {
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
+//delay(100);
+  int i = 0;
+  while (WiFi.status() != WL_CONNECTED) { // Wait for the Wi-Fi to connect
+    delay(10000);
+    Serial.print(++i); Serial.print(' ');
   }
-
-  randomSeed(micros());
-
   Serial.println("");
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
@@ -75,7 +73,7 @@ void setDateTime() {
   Serial.print("Waiting for NTP time sync: ");
   time_t now = time(nullptr);
   while (now < 8 * 3600 * 2) {
-    delay(100);
+    delay(1000);
     Serial.print(".");
     now = time(nullptr);
   }
@@ -135,17 +133,31 @@ void reconnect() {
 }
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
 
 
-  delay(500);
+ // delay(500);
 
-  LittleFS.begin();
-  setup_wifi();
- // setDateTime();
+    LittleFS.begin();
+    setup_wifi();
+  // setDateTime();
 
-  client->setServer(mqtt_server, mqtt_port);
-  client->setCallback(callback);
+ int numCerts = certStore.initCertStore(LittleFS, PSTR("/certs.idx"), PSTR("/certs.ar"));
+  Serial.printf("Number of CA certs read: %d\n", numCerts);
+  if (numCerts == 0) {
+    Serial.printf("No certs found. Did you run certs-from-mozilla.py and upload the LittleFS directory before running?\n");
+    return; // Can't connect to anything w/o certs!
+  }
+
+  BearSSL::WiFiClientSecure *bear = new BearSSL::WiFiClientSecure();
+  // Integrate the cert store with this connection
+  bear->setCertStore(&certStore);
+
+  client = new PubSubClient(*bear);
+
+
+    client->setServer(mqtt_server, mqtt_port);
+    client->setCallback(callback);
 
 
   NodeMCU_SS.begin(115200);
@@ -165,22 +177,35 @@ void loop() {
   if (!client->connected()) {
     reconnect();
   }
-client->loop();
+  client->loop();
 
-  
+ //To serial monitor
+  // if (c == '\n') {   
+  //   String ack=String("Recibido")+String('\n'); 
+  //   NodeMCU_SS.print(ack);
+  //   Serial.println(dataIn);
+  //   c = 0;
+  //   dataIn = "";
+  // }
+
+
+ // To Broker
   if (c == '\n') {
     Serial.println(dataIn);
-     unsigned long now = millis();
-  if (now - lastMsg > 2000) {
-    lastMsg = now;
-    ++value;
-    snprintf(msg, MSG_BUFFER_SIZE, "hello world #%ld", value);
-    Serial.print("Publish message: ");
-    Serial.println(msg);
-    static char s_dataIn[50];
-    client->publish("SensorLuz/Lab. Prototipos", dataIn.c_str()); 
-  }
+  String ack=String("Recibido")+String('\n'); 
+    NodeMCU_SS.print(ack);
+    unsigned long now = millis();
+    if (now - lastMsg > 2000) {
+      lastMsg = now;
+      ++value;
+      snprintf(msg, MSG_BUFFER_SIZE, "hello world #%ld", value);
+      Serial.print("Publish message: ");
+      Serial.println(msg);
+      static char s_dataIn[50];
+      client->publish("Bombillo/Lab. Prototipos", dataIn.c_str());
+    }
     c = 0;
     dataIn = "";
   }
+
 }

@@ -15,10 +15,34 @@ String str;
 char c;
 String dataFromNodeMCU;
 
+
+void ReceiveData() {
+  while (Arduino_SoftSerial.available() > 0) {
+    c = Arduino_SoftSerial.read();
+    if (c == '\n') {
+      break;
+    } else {
+      dataFromNodeMCU += c;
+    }
+  }
+
+  if (c == '\n') {
+    Serial.println(dataFromNodeMCU);
+    if (dataFromNodeMCU.indexOf("ON")>=0) {
+      digitalWrite(relayPin, HIGH);
+
+    } else if (dataFromNodeMCU.indexOf("OFF")>=0) {
+      digitalWrite(relayPin, LOW);
+    }
+    c = 0;
+    dataFromNodeMCU = "";
+  }
+}
+
 void setup() {
   Serial.begin(9600);
 
-  Arduino_SoftSerial.begin(115200);
+  Arduino_SoftSerial.begin(9600);
 
   pinMode(relayPin, OUTPUT);
   pinMode(temt6000Pin, INPUT);  //data pin for ambientlight sensor
@@ -28,25 +52,6 @@ void setup() {
 
 String input;
 
-void ReceiveData(){
-
-   while (Arduino_SoftSerial.available() > 0) {
-     
-      c = Arduino_SoftSerial.read();
-      if (c == '\n') {
-        break;
-      } else {
-        dataFromNodeMCU += c;
-      }
-    }
-
-    if (c == '\n') {
-      Serial.println(dataFromNodeMCU);
-      c = 0;
-      dataFromNodeMCU = "";
-    }
-
-}
 
 void loop() {
   int light_value = analogRead(temt6000Pin);
@@ -58,31 +63,36 @@ void loop() {
 
   if (Serial.available()) {
     input = Serial.readStringUntil('\n');
-
+    input.toUpperCase();
     if (input.equals("ON")) {
       str = String("ON. ") + String(light) + String("% ") + String(volt, 3) + String("V");
       Serial.println(str);
       digitalWrite(relayPin, HIGH);
-      String espStr = str + String('\n');
+      String espStr = String("ON") + String('\n');
       Arduino_SoftSerial.print(espStr);
 
     } else if (input.equals("OFF")) {
       str = String("OFF. ") + String(light) + String("% ") + String(volt, 3) + String("V");
       Serial.println(str);
       digitalWrite(relayPin, LOW);
-      String espStr = str + String('\n');
+      String espStr = String("OFF") + String('\n');
       Arduino_SoftSerial.print(espStr);
 
     } else {
-      Serial.println("Comando no aceptado, solo puede ser ON o OFF, intenta de nuevo");
+      Serial.println("Comando no aceptado, solo puede ser ON u OFF, intenta de nuevo");
     }
 
-    // str=String("luisa");
-    // espSerial.println(str);
 
-   
-    delay(2000);
+
+    delay(100);
     ReceiveData();
 
   }
+
+  
+    delay(100);
+
+    ReceiveData();
+
+    delay(9000);
 }

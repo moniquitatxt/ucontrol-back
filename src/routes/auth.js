@@ -13,6 +13,47 @@ function generatePin() {
 
 const router = express.Router();
 
+router.post("/createUser", async (req, res) => {
+	const { name, email } = req.body;
+
+	try {
+		// Check if the user already exists
+		const existingUser = await User.findOne({ email });
+		if (existingUser) {
+			return res
+				.status(400)
+				.json({ success: false, message: "Este email ya está registrado" });
+		}
+
+		// Save the new user with registered set to false
+		const user = new User({ name, email, registered: false });
+		await user.save();
+
+		const mailOptions = {
+			from: "ucontrol.iotsystem@gmail.com",
+			to: email,
+			subject: "Invitación al sistema Ucontrol",
+			text: `Hola! Usted su correo ha sido registrado en el sistema, por favor ingresa para crear tu contraseña y completar tu registro`,
+		};
+
+		const info = await transporter.sendMail(mailOptions);
+
+		res.status(201).json({
+			success: true,
+			message: "La invitación se ha enviado exitosamente",
+			data: permission,
+		});
+
+		res.status(201).json({
+			success: true,
+			message: "Usuario creado exitosamente",
+			data: user,
+		});
+	} catch (err) {
+		res.status(500).json({ success: false, message: err.message });
+	}
+});
+
 router.post("/sendCode", (req, res) => {
 	const { email } = req.body;
 	User.findOne({ email }).then(async (user) => {

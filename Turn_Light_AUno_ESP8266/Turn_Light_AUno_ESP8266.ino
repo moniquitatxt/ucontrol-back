@@ -34,7 +34,7 @@ const String DEVICE_NAME = topicLight;
 /**** Secure WiFi Connectivity Initialisation *****/
 WiFiClientSecure espClient;
 
-/**** MQTT Client Initialisation Using WiFi Connection *****/
+/**** MQTT Client Initialization Using WiFi Connection *****/
 PubSubClient client(espClient);
 
 unsigned long lastMsg = 0;
@@ -106,57 +106,28 @@ void setup_wifi() {
 }
 
 
-void setDateTime() {
-  // You can use your own timezone, but the exact time is not used at all.
-  // Only the date is needed for validating the certificates.
-  configTime(TZ_America_Caracas, "pool.ntp.org", "time.google.com");
-
-  Serial.print("Waiting for NTP time sync: ");
-  time_t now = time(nullptr);
-  while (now < 8 * 3600 * 2) {
-    delay(1000);
-    Serial.print(".");
-    now = time(nullptr);
-  }
-  Serial.println();
-
-  struct tm timeinfo;
-  gmtime_r(&now, &timeinfo);
-  Serial.printf("%s %s", tzname[0], asctime(&timeinfo));
-}
-
-/*
-* * Send to arduino the ACK 
-*/
-void sendACK(String msg) {
-  NodeMCU_SS.print(msg);
-}
-
-
-/*
-* * Send to arduino the action 
-*/
-
-
 /***** Call back Method for Receiving MQTT messages *****/
 
 void callback(char* topic, byte* payload, unsigned int length) {
   String incommingMessage = "";
 
+  String action = "";
+
   for (int i = 0; i < length; i++) {
     incommingMessage += (char)payload[i];
   }
-  Serial.println("Message arrived [" + String(topic) + "]" + incommingMessage);
-
+ // Serial.println("Message arrived [" + String(topic) + "]: " + incommingMessage);
 
   //check incoming message
-  if (strcmp(topic, topic) == 0) {
+  if (strcmp(topic, topicLight) == 0) {
     if (incommingMessage.equals("ON")) {
-      Serial.println("From broker: Bulb ON");
       //Send back to arduino action to turn on bulb
+      
+      NodeMCU_SS.print(String("ON") + String('\n'));
+
     } else if (incommingMessage.equals("OFF")) {
-      Serial.println("From broker: Bulb OFF");
       //Send back to arduino action to turn off bulb
+      NodeMCU_SS.print(String("OFF") + String('\n'));
     }
   } else {
     Serial.println("Nothing");
@@ -190,7 +161,7 @@ void reconnect(const char* topic) {
 void publishMessage(const char* topic, String payload, boolean retained) {
   if (client.publish(topic, payload.c_str(), true)) {
     Serial.println("Message published [" + String(topic) + "] " + payload);
-    ack = String(payload) + String('\n');
+    ack = String("Message published") + String('\n');
   }
 }
 
@@ -202,7 +173,7 @@ void setup() {
 
   LittleFS.begin();
   setup_wifi();
- // setDateTime();
+  // setDateTime();
 #ifdef ESP8266
   espClient.setInsecure();
 #else
@@ -241,17 +212,19 @@ void loop() {
     doc["deviceId"] = DEVICE_NAME;
     doc["siteId"] = "My Demo Lab";
     doc["bulbState"] = dataIn;
-    
+
 
     char mqtt_message[128];
     serializeJson(doc, mqtt_message);
 
     publishMessage(topicLight, mqtt_message, true);
-    Serial.println(ack);
-    NodeMCU_SS.print(ack);
-
+   
+    //   Serial.println(ack);
+    //  NodeMCU_SS.println(ack);
+    // delay(500);
     c = 0;
     dataIn = "";
     ack = "";
   }
+  delay(5000);
 }

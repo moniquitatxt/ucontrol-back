@@ -1,6 +1,6 @@
 import express from "express";
-import Device from "./device.js";
-import Space from "./space.js";
+import Device from "../models/Device.js";
+import Space from "../models/Space.js";
 
 const router = express.Router();
 
@@ -117,3 +117,5 @@ router.delete("/deleteDevice", async (req, res) => {
 		res.status(500).json({ success: false, message: err.message });
 	}
 });
+
+export default router;

@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const HistorySchema = new mongoose.Schema({
 	updatedBy: { type: String, required: true },
-	field: { type: String, required: true },
+	field: [{ type: String, required: true }],
 	updatedOn: { type: Date, default: Date.now },
 });
 

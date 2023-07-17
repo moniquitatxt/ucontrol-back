@@ -19,6 +19,10 @@ const UserSchema = new mongoose.Schema({
 		type: Boolean,
 		unique: false,
 	},
+	admin: {
+		type: Boolean,
+		unique: false,
+	}
 });
 
 const User = mongoose.model("Users", UserSchema);

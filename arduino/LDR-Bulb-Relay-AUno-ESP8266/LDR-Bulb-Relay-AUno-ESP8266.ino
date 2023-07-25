@@ -17,8 +17,6 @@ const char* password = "123luisa";
 
 //MQTT Server
 const char* mqtt_server = "6f73b3569de64e8c94164637cdc7a301.s2.eu.hivemq.cloud";
-const char* topicT = "channels/2207179/publish/fields/field1";
-const char* topicH = "channels/2207179/publish/fields/field2";
 const char* mqtt_clientid = "ucontrol";
 const char* mqtt_username = "ucontrol";
 const char* mqtt_password = "Ucontrol123";

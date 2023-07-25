@@ -1,25 +1,37 @@
-#include <SoftwareSerial.h>
-
+#include <SPI.h>
+#include <MFRC522.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#include <time.h>
-#include <TZ.h>
-#include <FS.h>
+
 #include <LittleFS.h>
-#include <CertStoreBearSSL.h>
 #include <ArduinoJson.h>
 
+/*
+In the ESP8266, D3 pin is RST_PIN and
+D4 pin is SS_PIN
+*/
+#define RST_PIN D0
+#define SS_PIN D8
 
-#define SEPARATOR ';'
-#define TERMINATOR '/'
+#define SCREEN_WIDTH 128  // OLED display width, in pixels
+#define SCREEN_HEIGHT 64  // OLED display height, in pixels
 
-//wifi
+// Declaration for SSD1306 display connected using I2C
+#define OLED_RESET -1  // Reset pin
+#define SCREEN_ADDRESS 0x3C
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+
+// wifi
 const char* ssid = "luisa";
 const char* password = "123luisa";
 
 //MQTT Server
 const char* mqtt_server = "6f73b3569de64e8c94164637cdc7a301.s2.eu.hivemq.cloud";
-const char* topicSoilMoist = "Jardin/Escuela Ing. Informatica";
+const char* topicAccess = "Puerta/Lab. Prototipos/Escuela Ing. Informatica";
 const char* mqtt_clientid = "ucontrol";
 const char* mqtt_username = "ucontrol";
 const char* mqtt_password = "Ucontrol123";
@@ -29,18 +41,19 @@ long writeChannelID = 86;
 const String NAMES_SEPARATOR = "-";
 
 
-const String DEVICE_NAME = "Soil Sensor" + NAMES_SEPARATOR + topicSoilMoist;
+const String DEVICE_NAME = "Acceso" + NAMES_SEPARATOR + topicAccess;
 
 /**** Secure WiFi Connectivity Initialisation *****/
 WiFiClientSecure espClient;
 
-/**** MQTT Client Initialization Using WiFi Connection *****/
+/**** MQTT Client Initialisation Using WiFi Connection *****/
 PubSubClient client(espClient);
 
 unsigned long lastMsg = 0;
 #define MSG_BUFFER_SIZE (50)
 char msg[MSG_BUFFER_SIZE];
-int value = 0;
+
+/****** root certificate *********/
 
 static const char* root_ca PROGMEM = R"EOF(
 -----BEGIN CERTIFICATE-----
@@ -77,12 +90,15 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 )EOF";
 
 
-SoftwareSerial NodeMCU_SS(D1, D2);
+MFRC522 reader(SS_PIN, RST_PIN);
+MFRC522::MIFARE_Key key;
 
-char c;
-String dataIn;
-String ack;
 
+
+
+
+
+/************* Connect to WiFi ***********/
 void setup_wifi() {
   delay(10);
   Serial.println();
@@ -116,22 +132,22 @@ void callback(char* topic, byte* payload, unsigned int length) {
   for (int i = 0; i < length; i++) {
     incommingMessage += (char)payload[i];
   }
-  // Serial.println("Message arrived [" + String(topic) + "]: " + incommingMessage);
+   Serial.println("Message arrived [" + String(topic) + "]: " + incommingMessage);
 
-  // //check incoming message
-  // if (strcmp(topic, topicSoilMoist) == 0) {
-  //   if (incommingMessage.equals("ON")) {
-  //     //Send back to arduino action to turn on bulb
+  //check incoming message
+  if (strcmp(topic, topicAccess) == 0) {
+    if (incommingMessage.equals("ON")) {
+      //Send back to arduino action to turn on bulb
 
-  //     NodeMCU_SS.print(String("ON") + String('\n'));
+      NodeMCU_SS.print(String("ON") + String('\n'));
 
-  //   } else if (incommingMessage.equals("OFF")) {
-  //     //Send back to arduino action to turn off bulb
-  //     NodeMCU_SS.print(String("OFF") + String('\n'));
-  //   }
-  // } else {
-  //   Serial.println("Nothing");
-  // }
+    } else if (incommingMessage.equals("OFF")) {
+      //Send back to arduino action to turn off bulb
+      NodeMCU_SS.print(String("OFF") + String('\n'));
+    }
+  } else {
+    Serial.println("Nothing");
+  }
 }
 
 
@@ -161,13 +177,15 @@ void reconnect(const char* topic) {
 void publishMessage(const char* topic, String payload, boolean retained) {
   if (client.publish(topic, payload.c_str(), true)) {
     Serial.println("Message published [" + String(topic) + "] " + payload);
-    ack = String("Message published") + String('\n');
   }
 }
 
-void setup() {
-  Serial.begin(9600);
 
+void setup() {
+  Serial.begin(9600);  // Initialize serial communications and wait until it is ready
+  while (!Serial) {
+    // Nothing here. Just wait for serial to be present
+  }
 
   delay(500);
 
@@ -182,50 +200,100 @@ void setup() {
 
   client.setServer(mqtt_server, mqtt_port);
   client.setCallback(callback);
-  NodeMCU_SS.begin(9600);
-}
 
+  SPI.begin();
 
-void loop() {
+  reader.PCD_Init();
+  // Just wait some seconds...
+  delay(4);
+  // Prepare the security key for the read and write functions.
+  // Normally it is 0xFFFFFFFFFFFF
+  // Note: 6 comes from MF_KEY_SIZE in MFRC522.h
+  for (byte i = 0; i < 6; i++) {
+    key.keyByte[i] = 0xFF;  //keyByte is defined in the "MIFARE_Key" 'struct' definition in the .h file of the library
+  }
+  Serial.println("Ready!");
 
-  while (NodeMCU_SS.available() > 0) {
-    c = NodeMCU_SS.read();
-    if (c == '\n') {
-      break;
-    } else {
-      dataIn += c;
-    }
+  // initialize the OLED object
+  if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for (;;)
+      ;  // Don't proceed, loop forever
   }
 
+  // Clear the buffer.
+  display.clearDisplay();
+
+  // Display Text
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0, 0);
+  display.println("Codigo de carnets UCAB");
+  display.display();
+  delay(2000);
+  display.clearDisplay();
+}
+
+void loop() {
+  // Reset the loop if no new card present on the sensor/reader. This saves the entire process when idle.
+  if (!reader.PICC_IsNewCardPresent()) {
+    return;
+  }
+
+  // Select one of the cards. This returns false if read is not successful; and if that happens, we stop the code
+  if (!reader.PICC_ReadCardSerial()) {
+    return;
+  }
+
+  // At this point, the serial can be read. We transform from byte to hex
+
+  String serial = "";
+  for (int x = 0; x < reader.uid.size; x++) {
+    // If it is less than 10, we add zero
+    if (reader.uid.uidByte[x] < 0x10) {
+      serial += "0";
+    }
+    // Transform the byte to hex
+    serial += String(reader.uid.uidByte[x], HEX);
+  }
+  // Transform to uppercase
+  serial.toUpperCase();
+  serial.concat('\n');
 
   if (!client.connected()) {
-    reconnect(topicSoilMoist);
+    reconnect(topicAccess);
   }
   client.loop();
 
 
-  // To Broker
-  if (c == '\n') {
+  Serial.println("Read serial is: " + serial);
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0, 0);
+  display.print("Codigo: ");
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0, 20);
+  display.println(serial);
+  display.display();
+  display.clearDisplay();
 
-    Serial.println(dataIn);
-    DynamicJsonDocument doc(1024);
 
-    doc["deviceId"] = DEVICE_NAME;
-    doc["siteId"] = "UControl";
-    doc["sensorState"] = dataIn;
+  DynamicJsonDocument doc(1024);
+
+  doc["deviceId"] = DEVICE_NAME;
+  doc["siteId"] = "UControl";
+  doc["cardCode"] = serial;
 
 
-    char mqtt_message[128];
-    serializeJson(doc, mqtt_message);
+  char mqtt_message[128];
+  serializeJson(doc, mqtt_message);
 
-    publishMessage(topicSoilMoist, mqtt_message, true);
+  publishMessage(topicAccess, mqtt_message, true);
 
-    //   Serial.println(ack);
-    //  NodeMCU_SS.println(ack);
-    // delay(500);
-    c = 0;
-    dataIn = "";
-    ack = "";
-  }
-  delay(5000);
+
+  // Halt PICC
+  reader.PICC_HaltA();
+  // Stop encryption on PCD
+  reader.PCD_StopCrypto1();
 }

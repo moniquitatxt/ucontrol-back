@@ -37,6 +37,8 @@ router.post("/createSubspace", async (req, res) => {
 		if (!space) {
 			throw new Error("Espacio no encontrado");
 		}
+
+		newSubspace.parentSpace = space._id;
 		const subSpace = new Space(newSubspace);
 		space.subSpaces.push(subSpace._id);
 		await subSpace.save();
@@ -84,6 +86,21 @@ router.get("/getSpaceDevices", async (req, res) => {
 			success: true,
 			message: "Dispositivos obtenidos exitosamente",
 			data: devices,
+		});
+	} catch (err) {
+		res.status(500).json({ success: false, message: err.message });
+	}
+});
+
+router.get("/getAllSpaces", async (req, res) => {
+	try {
+		// Find all spaces, including both parent spaces and subspaces
+		const allSpaces = await Space.find({});
+
+		res.status(200).json({
+			success: true,
+			message: "Todos los espacios obtenidos exitosamente",
+			spaces: allSpaces,
 		});
 	} catch (err) {
 		res.status(500).json({ success: false, message: err.message });

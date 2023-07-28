@@ -6,7 +6,7 @@ int zVal = 0;
 
 double angleYZ = 0;
 double angleXZ = 0;
-double acceleration = 0;
+double i = 0;
 
 void setup() {
   analogReference(EXTERNAL);
@@ -31,6 +31,8 @@ void loop() {
   Serial.write("xz:");
   Serial.print(angleXZ);
   Serial.write("\n");
+  Serial.print(i);
   Serial.println("-----------------");
-  delay(5000);
+  i++;
+  delay(1000);
 }

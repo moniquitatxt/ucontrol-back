@@ -8,7 +8,7 @@ import spaceRoute from "./routes/spaces.js";
 import permissionRoute from "./routes/permissions.js";
 import deviceRoute from "./routes/devices.js";
 
-const PORT = process.env.PORT || 9000;
+const PORT = process.env.PORT || 27017;
 const app = express();
 
 db();

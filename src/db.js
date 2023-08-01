@@ -1,5 +1,8 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+
+// COSMOS_CONNECTION_STRING="mongodb+srv://moniquitatxt:Becauseyolo2310@iot-ucontrol-server.nq3zzs9.mongodb.net/?retryWrites=true&w=majority"
+
 dotenv.config();
 
 const db = () => {

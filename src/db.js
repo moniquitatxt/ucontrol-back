@@ -1,8 +1,6 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 
-// COSMOS_CONNECTION_STRING="mongodb+srv://moniquitatxt:Becauseyolo2310@iot-ucontrol-server.nq3zzs9.mongodb.net/?retryWrites=true&w=majority"
-
 dotenv.config();
 
 const db = () => {
@@ -13,10 +11,10 @@ const db = () => {
 			useUnifiedTopology: true,
 		})
 		.then(() => {
-			console.log("Successfully connected to MongoDB Atlas!");
+			console.log("Se ha conectado exitosamente a la base de datos");
 		})
 		.catch((error) => {
-			console.log("Unable to connect to MongoDB Atlas!");
+			console.log("No se pudo conectar a la base de datos");
 			console.error(error);
 		});
 };

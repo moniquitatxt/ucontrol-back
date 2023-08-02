@@ -108,7 +108,7 @@ router.get("/getAllSpaces", async (req, res) => {
 });
 
 // Update a space
-router.put("/updateSpace", async (req, res) => {
+router.patch("/updateSpace", async (req, res) => {
 	const { spaceId, spaceUpdate } = req.body;
 	try {
 		const space = await Space.findByIdAndUpdate(spaceId, spaceUpdate, {

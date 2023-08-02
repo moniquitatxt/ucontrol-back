@@ -21,7 +21,6 @@ app.use("/api", userRoute);
 app.use("/api", deviceRoute);
 app.use("/api", spaceRoute);
 app.use("/api", permissionRoute);
-app.use("/api", deviceRoute);
 
 app.listen(PORT, () => {
 	console.log(`Server is running on port: ${PORT}`);

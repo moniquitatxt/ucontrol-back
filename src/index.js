@@ -23,5 +23,5 @@ app.use("/api", spaceRoute);
 app.use("/api", permissionRoute);
 
 app.listen(PORT, () => {
-	console.log(`Server is running on port: ${PORT}`);
+	console.log(`Servidor en el puerto: ${PORT}`);
 });

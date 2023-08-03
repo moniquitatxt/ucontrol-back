@@ -12,7 +12,6 @@ const PORT = process.env.PORT || 27017;
 const app = express();
 
 db();
-
 app.use(cors());
 app.use(express.json());
 

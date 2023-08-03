@@ -33,7 +33,7 @@ router.post("/createDevice", async (req, res) => {
 	}
 });
 
-router.get("/getAllDevicesBySpace", async (req, res) => {
+router.post("/getAllDevicesBySpace", async (req, res) => {
 	try {
 		const { spaceId } = req.body;
 
@@ -76,7 +76,7 @@ router.get("/getAllDevicesBySpace", async (req, res) => {
 });
 
 
-router.get('/devicesByUser', async (req, res) => {
+router.post('/devicesByUser', async (req, res) => {
 	const { userId } = req.body;
 
 	try {
@@ -93,7 +93,7 @@ router.get('/devicesByUser', async (req, res) => {
 	}
 });
 
-router.get("/getDeviceById", async (req, res) => {
+router.post("/getDeviceById", async (req, res) => {
 	const { id } = req.body;
 
 	try {
@@ -180,5 +180,7 @@ router.delete("/deleteDevice", async (req, res) => {
 		res.status(500).json({ success: false, message: err.message });
 	}
 });
+
+
 
 export default router;

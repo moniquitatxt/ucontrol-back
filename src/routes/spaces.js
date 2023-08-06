@@ -145,4 +145,24 @@ router.delete("/deleteSpace", async (req, res) => {
 	}
 });
 
+//Get a space
+router.get('/getSpaceById/:spaceId', async (req, res) => {
+	const spaceId = req.params.spaceId;
+
+	try {
+		const space = await Space.findById(spaceId);
+		if (!space) {
+			throw new Error("Espacio no encontrado");
+		}
+		res.status(200).json({
+			success: true,
+			message: "Espacio obtenido exitosamente",
+			data: space,
+		});
+	}
+	catch (err) {
+		res.status(500).json({ success: false, message: err.message });
+	}
+});
+
 export default router;

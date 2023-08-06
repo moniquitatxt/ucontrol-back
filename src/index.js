@@ -7,7 +7,7 @@ import userRoute from "./routes/users.js";
 import spaceRoute from "./routes/spaces.js";
 import permissionRoute from "./routes/permissions.js";
 import deviceRoute from "./routes/devices.js";
-import client from "./broker.js";
+//import client from "./broker.js";
 const PORT = process.env.PORT || 27017;
 const app = express();
 

@@ -18,8 +18,8 @@ router.get("/getAllUsers", async (req, res) => {
 });
 
 // Get a user by ID
-router.get("/getUserById", async (req, res) => {
-	const { id } = req.body;
+router.get("/getUserById/:id", async (req, res) => {
+	const { id } = req.params;
 
 	try {
 		const user = await User.findById(id);

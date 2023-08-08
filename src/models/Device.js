@@ -14,6 +14,7 @@ const DeviceSchema = new mongoose.Schema({
 	createdBy: { type: String, required: true },
 	createdOn: { type: Date, default: Date.now },
 	history: [HistorySchema],
+	topic: { type: String, required: true },
 });
 
 const Device = mongoose.model("Devices", DeviceSchema);

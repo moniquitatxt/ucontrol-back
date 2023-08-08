@@ -33,6 +33,32 @@ router.post("/createDevice", async (req, res) => {
 	}
 });
 
+router.get("/getSpaceByDeviceId/:deviceId", async (req, res) => {
+	try {
+		const { deviceId } = req.params;
+		const device = await Device.findById(deviceId);
+
+		// Check if the device exists
+		if (!device) {
+			return res.status(404).json({ message: "Device not found" });
+		}
+
+		// Find the space that contains the device
+		const space = await Space.findOne({ devices: deviceId });
+
+		// Check if the space exists
+		if (!space) {
+			return res.status(404).json({ message: "Space not found" });
+		}
+
+		// Return the space id
+		res.json({ spaceId: space._id });
+	} catch (error) {
+		// Handle any errors
+		res.status(500).json({ message: error.message });
+	}
+});
+
 router.post("/getAllDevicesBySpace", async (req, res) => {
 	try {
 		const { spaceId } = req.body;
@@ -75,8 +101,7 @@ router.post("/getAllDevicesBySpace", async (req, res) => {
 	}
 });
 
-
-router.post('/devicesByUser', async (req, res) => {
+router.post("/devicesByUser", async (req, res) => {
 	const { userId } = req.body;
 
 	try {
@@ -84,7 +109,9 @@ router.post('/devicesByUser', async (req, res) => {
 		const devices = await Device.find({ createdBy: userId }).exec();
 
 		if (devices.length === 0) {
-			return res.status(404).json({ success: false, message: 'No devices found for this user.' });
+			return res
+				.status(404)
+				.json({ success: false, message: "No devices found for this user." });
 		}
 
 		res.status(200).json({ success: true, data: devices });
@@ -180,7 +207,5 @@ router.delete("/deleteDevice", async (req, res) => {
 		res.status(500).json({ success: false, message: err.message });
 	}
 });
-
-
 
 export default router;

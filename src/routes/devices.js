@@ -148,7 +148,7 @@ router.patch("/updateDevice", async (req, res) => {
 	try {
 		const device = await Device.findByIdAndUpdate(
 			id,
-			{ name, description, dvt, type },
+			{ name, description, dvt, topic },
 			{ new: true }
 		);
 		if (!device) {

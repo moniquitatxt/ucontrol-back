@@ -3,12 +3,18 @@ import dotenv from "dotenv";
 dotenv.config();
 import { InfluxDB, Point } from "@influxdata/influxdb-client";
 
-const client = mqtt.connect("mqtt://192.168.0.101:1883");
-
 const url = process.env.INFLUX_URL;
 const token = process.env.API_TOKEN;
 const org = process.env.ORG_ID;
 const bucket = process.env.BUCKET;
+const ip = process.env.IP;
+const username = process.env.USER;
+const password = process.env.PASS;
+
+const client = mqtt.connect(`mqtt://${ip}:1883`, {
+	username: username,
+	password: password,
+});
 
 const influxDB = new InfluxDB({ url, token });
 

@@ -9,6 +9,7 @@ import permissionRoute from "./routes/permissions.js";
 import deviceRoute from "./routes/devices.js";
 import queriesRoute from "./influxdb/queries.js";
 import client from "./broker.js";
+
 const PORT = process.env.PORT || 9000;
 const app = express();
 

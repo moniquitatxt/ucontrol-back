@@ -2,8 +2,20 @@ import express from "express";
 import Device from "../models/Device.js";
 import Space from "../models/Space.js";
 import mongoose from "mongoose";
+import mqtt from "mqtt";
+import dotenv from "dotenv";
+dotenv.config();
 
 const router = express.Router();
+
+const ip = process.env.IP;
+const username = process.env.USER;
+const password = process.env.PASS;
+
+const client = mqtt.connect(`mqtt://${ip}:1884`, {
+	username: username,
+	password: password,
+});
 
 router.post("/createDevice", async (req, res) => {
 	const { deviceData, spaceId } = req.body;
@@ -19,7 +31,17 @@ router.post("/createDevice", async (req, res) => {
 
 		// Create the new device and add it to the associated space
 		const device = new Device(deviceData);
+
+		client.publish("Nuevo dispositivo", device.topic, (err) => {
+			if (err) {
+				console.error("Error publishing message:", err);
+			} else {
+				console.log("Message published successfully");
+			}
+		});
+
 		const savedDevice = await device.save();
+
 		space.devices.push(savedDevice._id);
 		await space.save();
 
@@ -143,7 +165,7 @@ router.post("/getDeviceById", async (req, res) => {
 
 router.patch("/updateDevice", async (req, res) => {
 	const { id } = req.body;
-	const { name, description, dvt, type } = req.body;
+	const { name, description, dvt, topic } = req.body;
 
 	try {
 		const device = await Device.findByIdAndUpdate(

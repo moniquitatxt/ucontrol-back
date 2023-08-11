@@ -17,6 +17,15 @@ const DeviceSchema = new mongoose.Schema({
 	topic: { type: String, required: true },
 });
 
+DeviceSchema.statics.getAllTopics = async function () {
+	try {
+		const devices = await this.find({}, "topic");
+		return devices.map((device) => device.topic);
+	} catch (error) {
+		throw error;
+	}
+};
+
 const Device = mongoose.model("Devices", DeviceSchema);
 
 export default Device;

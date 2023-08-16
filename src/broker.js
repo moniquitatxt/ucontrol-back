@@ -27,23 +27,27 @@ client.on("connect", () => {
 	client.subscribe(
 		"Escuela de Ingeniería Civil / Oficina Profe Yolanda / Bombillo de la oficina / Switch"
 	);
-	(async () => {
-		try {
-			const topics = await Device.getAllTopics();
-			// Subscribe to all topics retrieved from the database
-			topics.forEach((topic) => {
-				client.subscribe(topic, (error) => {
-					if (error) {
-						console.error(`Error al suscribirse al tópico ${topic}:`, error);
-					} else {
-						console.log(`Suscrito con éxito a ${topic}`);
-					}
-				});
-			});
-		} catch (error) {
-			console.error("Error al obtener tópicos", error);
-		}
-	})();
+
+	client.subscribe(
+		"Escuela de Ingeniería Civil / Oficina Profe Yolanda / Sensor de Movimiento"
+	);
+	// (async () => {
+	// 	try {
+	// 		const topics = await Device.getAllTopics();
+	// 		// Subscribe to all topics retrieved from the database
+	// 		topics.forEach((topic) => {
+	// 			client.subscribe(topic, (error) => {
+	// 				if (error) {
+	// 					console.error(`Error al suscribirse al tópico ${topic}:`, error);
+	// 				} else {
+	// 					console.log(`Suscrito con éxito a ${topic}`);
+	// 				}
+	// 			});
+	// 		});
+	// 	} catch (error) {
+	// 		console.error("Error al obtener tópicos", error);
+	// 	}
+	// })();
 });
 
 client.on("message", (topic, message) => {

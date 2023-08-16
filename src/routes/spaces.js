@@ -132,9 +132,25 @@ router.delete("/deleteSpace", async (req, res) => {
 	const { spaceId } = req.body;
 	try {
 		const space = await Space.findByIdAndDelete(spaceId);
+
 		if (!space) {
 			throw new Error("Espacio no encontrado");
 		}
+
+		// Delete devices associated with the space
+		for (const deviceId of space.devices) {
+			await Device.findByIdAndDelete(deviceId);
+		}
+
+		// If the space has a parent space, remove itself from the parent's subSpaces array
+		if (space.parentSpace) {
+			const parentSpace = await Space.findById(space.parentSpace);
+			if (parentSpace) {
+				parentSpace.subSpaces.pull(spaceId);
+				await parentSpace.save();
+			}
+		}
+
 		res.status(200).json({
 			success: true,
 			message: "Espacio eliminado exitosamente",
@@ -146,7 +162,7 @@ router.delete("/deleteSpace", async (req, res) => {
 });
 
 //Get a space
-router.get('/getSpaceById/:spaceId', async (req, res) => {
+router.get("/getSpaceById/:spaceId", async (req, res) => {
 	const spaceId = req.params.spaceId;
 
 	try {
@@ -159,8 +175,7 @@ router.get('/getSpaceById/:spaceId', async (req, res) => {
 			message: "Espacio obtenido exitosamente",
 			data: space,
 		});
-	}
-	catch (err) {
+	} catch (err) {
 		res.status(500).json({ success: false, message: err.message });
 	}
 });

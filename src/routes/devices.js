@@ -207,15 +207,11 @@ router.delete("/deleteDevice", async (req, res) => {
 				.json({ success: false, message: "Dispositivo no encontrado" });
 		}
 
-		// Remove the device from its associated space
-		if (device.spaceId) {
-			const space = await Space.findById(device.spaceId);
-			if (!space) {
-				return res
-					.status(404)
-					.json({ success: false, message: "Espacio no encontrado." });
-			}
+		// Find all spaces that have the device ID in their devices array
+		const spacesToUpdate = await Space.find({ devices: device._id });
 
+		// Remove the device ID from the devices array of each associated space
+		for (const space of spacesToUpdate) {
 			space.devices.pull(device._id);
 			await space.save();
 		}

@@ -13,13 +13,15 @@ const queryApi = influxDB.getQueryApi(org);
 
 const router = express.Router();
 
-router.get("/temperature", async (req, res) => {
+router.post("/getInfluxData", async (req, res) => {
 	try {
 		// Write your Flux query here
+
+		const { topic } = req.body;
 		const fluxQuery = `
         from(bucket: "${bucket}")
           |> range(start: -10d) // Change the time range as needed
-          |> filter(fn: (r) => r._measurement == "temperatura")`;
+          |> filter(fn: (r) => r._measurement == "${topic}")`;
 
 		// Execute the Flux query
 		const queryResult = await queryApi.collectRows(fluxQuery);

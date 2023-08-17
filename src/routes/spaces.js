@@ -109,7 +109,7 @@ router.get("/getAllSpaces", async (req, res) => {
 
 // Update a space
 router.patch("/updateSpace", async (req, res) => {
-	const { spaceId, spaceUpdate } = req.body;
+	const { spaceId, fields, spaceUpdate, userName } = req.body;
 	try {
 		const space = await Space.findByIdAndUpdate(spaceId, spaceUpdate, {
 			new: true,
@@ -117,6 +117,16 @@ router.patch("/updateSpace", async (req, res) => {
 		if (!space) {
 			throw new Error("Espacio no encontrado");
 		}
+
+		// Create a history entry for the update
+		const historyEntry = {
+			updatedBy: userName,
+			field: fields, // Assuming spaceUpdate contains fields to be updated
+		};
+
+		space.history.push(historyEntry);
+		await space.save();
+
 		res.status(200).json({
 			success: true,
 			message: "Espacio actualizado exitosamente",

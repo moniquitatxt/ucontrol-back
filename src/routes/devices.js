@@ -18,7 +18,7 @@ const client = mqtt.connect(`mqtt://${ip}:1884`, {
 });
 
 router.post("/createDevice", async (req, res) => {
-	const { deviceData, spaceId } = req.body;
+	const { deviceData, spaceId, userName } = req.body;
 
 	try {
 		// Check if the associated space exists
@@ -41,6 +41,12 @@ router.post("/createDevice", async (req, res) => {
 		});
 
 		const savedDevice = await device.save();
+
+		const historyEntry = {
+			updatedBy: userName,
+			field: [`Se agregó el dispositivo ${device.name}`], // Assuming spaceUpdate contains fields to be updated
+		};
+		space.history.push(historyEntry);
 
 		space.devices.push(savedDevice._id);
 		await space.save();
@@ -183,6 +189,19 @@ router.patch("/updateDevice", async (req, res) => {
 			updatedBy: userName,
 			field: fields, // Assuming spaceUpdate contains fields to be updated
 		};
+
+		const spacesToUpdate = await Space.find({ devices: device._id });
+
+		const historySpaceEntry = {
+			updatedBy: userName,
+			field: [`Se modificó el dispositivo ${device.name}`], // Assuming spaceUpdate contains fields to be updated
+		};
+		// Remove the device ID from the devices array of each associated space
+		for (const space of spacesToUpdate) {
+			space.history.push(historySpaceEntry);
+			await space.save();
+		}
+
 		device.history.push(historyEntry);
 		await device.save();
 
@@ -197,7 +216,7 @@ router.patch("/updateDevice", async (req, res) => {
 });
 
 router.delete("/deleteDevice", async (req, res) => {
-	const { id } = req.body;
+	const { id, userName } = req.body;
 
 	try {
 		// Check if the provided ID is a valid ObjectId
@@ -217,8 +236,13 @@ router.delete("/deleteDevice", async (req, res) => {
 		// Find all spaces that have the device ID in their devices array
 		const spacesToUpdate = await Space.find({ devices: device._id });
 
+		const historyEntry = {
+			updatedBy: userName,
+			field: [`Se eliminó el dispositivo ${device.name}`], // Assuming spaceUpdate contains fields to be updated
+		};
 		// Remove the device ID from the devices array of each associated space
 		for (const space of spacesToUpdate) {
+			space.history.push(historyEntry);
 			space.devices.pull(device._id);
 			await space.save();
 		}

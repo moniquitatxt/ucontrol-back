@@ -58,8 +58,6 @@ void setup_wifi() {
 /***** Call back Method for Receiving MQTT messages *****/
 
 void callback(char* topic, byte* payload, unsigned int length) {
-
-
   String incommingMessage = "";
 
   for (int i = 0; i < length; i++) {

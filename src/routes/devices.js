@@ -165,7 +165,7 @@ router.post("/getDeviceById", async (req, res) => {
 
 router.patch("/updateDevice", async (req, res) => {
 	const { id } = req.body;
-	const { name, description, dvt, topic } = req.body;
+	const { name, description, dvt, topic, fields, userName } = req.body;
 
 	try {
 		const device = await Device.findByIdAndUpdate(
@@ -178,6 +178,13 @@ router.patch("/updateDevice", async (req, res) => {
 				.status(404)
 				.json({ success: false, message: "Device not found" });
 		}
+		// Create a history entry for the update
+		const historyEntry = {
+			updatedBy: userName,
+			field: fields, // Assuming spaceUpdate contains fields to be updated
+		};
+		device.history.push(historyEntry);
+		await device.save();
 
 		res.status(200).json({
 			success: true,

@@ -1,9 +1,10 @@
 import mongoose from "mongoose";
+import { toVenezuelanTime } from "./Functions.js";
 
 const HistorySchema = new mongoose.Schema({
 	updatedBy: { type: String, required: true },
 	field: [{ type: String, required: true }],
-	updatedOn: { type: Date, default: Date.now },
+	updatedOn: { type: Date, default: toVenezuelanTime() },
 });
 
 const DeviceSchema = new mongoose.Schema({
@@ -12,7 +13,7 @@ const DeviceSchema = new mongoose.Schema({
 	dvt: [{ type: String }],
 	type: { type: String, required: true },
 	createdBy: { type: String, required: true },
-	createdOn: { type: Date, default: Date.now },
+	createdOn: { type: Date, default: toVenezuelanTime() },
 	history: [HistorySchema],
 	topic: { type: String, required: true },
 });

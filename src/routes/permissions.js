@@ -9,11 +9,11 @@ import Space from "../models/Space.js";
 const router = express.Router();
 
 // Crear un nuevo permiso
-router.post("/permissions", async (req, res) => {
+router.post("/permission", async (req, res) => {
 	try {
-		const { permission, email } = new Permission(req.body);
-
-		await permission.save();
+		const { permission, email } = req.body;
+		const permissionSaved = new Permission(permission);
+		await permissionSaved.save();
 
 		const transporter = nodemailer.createTransport({
 			service: "Gmail",
@@ -71,17 +71,46 @@ router.get("/getUserPermissions", async (req, res) => {
 		res.status(500).json({ success: false, message: err.message });
 	}
 });
+// Recursive function to get all subspaces
+const getAllSubspaces = async (spaceId) => {
+	const subspaceIds = await Space.find({ parentSpace: spaceId }).distinct(
+		"_id"
+	);
+	let allSubspaces = subspaceIds;
 
-// Get all spaces for a user
-router.get("/getUserSpaces", async (req, res) => {
-	const { userId } = req.body;
+	for (const subId of subspaceIds) {
+		const nestedSubspaces = await getAllSubspaces(subId);
+		allSubspaces = allSubspaces.concat(nestedSubspaces);
+	}
+
+	return allSubspaces;
+};
+
+// Route to get all spaces the user has permissions to, including subspaces
+router.get("/getUserSpaces/:userId", async (req, res) => {
+	const { userId } = req.params;
+
 	try {
-		const permissions = await Permission.find({ userId });
-		const spaceIds = permissions.map((permission) => permission.spaceId);
-		const spaces = await Space.find({ _id: { $in: spaceIds } });
+		// Find space IDs for which the user has permissions
+		const permissionSpaces = await Permission.find({ userId }).distinct(
+			"spaceId"
+		);
+
+		// Retrieve all subspaces recursively for each space
+		let allSubspaces = [];
+		for (const spaceId of permissionSpaces) {
+			const subspaces = await getAllSubspaces(spaceId);
+			allSubspaces = allSubspaces.concat(subspaces);
+		}
+
+		// Find and return the spaces corresponding to the retrieved IDs
+		const spaces = await Space.find({
+			$or: [{ _id: { $in: allSubspaces } }, { _id: { $in: permissionSpaces } }],
+		});
+
 		res.status(200).json({
 			success: true,
-			message: "Espacios obtenidos exitosamente",
+			message: "Spaces retrieved successfully",
 			data: spaces,
 		});
 	} catch (err) {

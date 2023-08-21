@@ -21,6 +21,8 @@ const influxDB = new InfluxDB({ url, token });
 
 client.on("connect", () => {
 	console.log("Conectado al broker");
+
+	client.subscribe("Control de acceso");
 	client.subscribe("Nuevo Dispositivo");
 	client.subscribe("Pato / Bombillo");
 
@@ -50,22 +52,26 @@ client.on("message", (topic, message) => {
 	const writeApi = influxDB.getWriteApi(org, bucket);
 
 	if (topic == "Nuevo Dispositivo") {
+		console.log("Suscrito al nuevo dispositivo");
 		client.subscribe(message.toString());
 	}
 
 	//writeApi.useDefaultTags({ region: "west" });
+	if (topic == "Control de acceso") {
+		console.log(message.toString());
+	} else {
+		const topico = topic.toString();
+		const mensaje = message.toString();
+		const valor = parseFloat(mensaje);
 
-	const topico = topic.toString();
-	const mensaje = message.toString();
-	const valor = parseFloat(mensaje);
+		const point = new Point(topico).floatField("value", valor);
+		//console.log(` ${point}`);
 
-	const point = new Point(topico).floatField("value", valor);
-	//console.log(` ${point}`);
-
-	writeApi.writePoint(point);
-	writeApi.close().then(() => {
-		console.log(` Registrado ${point}`);
-	});
+		writeApi.writePoint(point);
+		writeApi.close().then(() => {
+			console.log(` Registrado ${point}`);
+		});
+	}
 });
 
 client.on("error", (error) => {

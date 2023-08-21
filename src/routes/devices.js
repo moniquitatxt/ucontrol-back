@@ -36,7 +36,7 @@ router.post("/createDevice", async (req, res) => {
 			if (err) {
 				console.error("Error publishing message:", err);
 			} else {
-				console.log("Message published successfully");
+				console.log("Mensaje enviado");
 			}
 		});
 

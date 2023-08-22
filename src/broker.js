@@ -24,11 +24,9 @@ client.on("connect", () => {
 
 	client.subscribe("Control de acceso");
 	client.subscribe("Nuevo Dispositivo");
+	client.subscribe("Topico extra");
 	client.subscribe("Pato / Bombillo");
 
-	client.subscribe(
-		"Escuela de Ingeniería Civil / Oficina Profe Yolanda / Bombillo de la oficina / Switch"
-	);
 	(async () => {
 		try {
 			const topics = await Device.getAllTopics();
@@ -53,6 +51,12 @@ client.on("message", (topic, message) => {
 
 	if (topic == "Nuevo Dispositivo") {
 		console.log("Suscrito al nuevo dispositivo");
+
+		client.subscribe(message.toString());
+	}
+	if (topic == "Topico extra") {
+		console.log("Suscrito al tópico extra");
+		console.log(message.toString());
 		client.subscribe(message.toString());
 	}
 

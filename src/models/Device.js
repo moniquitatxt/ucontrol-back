@@ -20,8 +20,24 @@ const DeviceSchema = new mongoose.Schema({
 
 DeviceSchema.statics.getAllTopics = async function () {
 	try {
-		const devices = await this.find({}, "topic");
-		return devices.map((device) => device.topic);
+		const devices = await this.find({});
+		const topics = [];
+		devices.map((device) => {
+			if (device.type == "aire" || device.type == "luz") {
+				topics.push(device.topic + " / Switch");
+			}
+			if (device.type == "controlAcceso") {
+				topics.push(device.topic + " / Permiso");
+			}
+			if (device.type == "tempHum") {
+				topics.push(device.topic + " / Temperatura");
+				topics.push(device.topic + " / Humedad");
+			} else {
+				topics.push(device.topic);
+			}
+		});
+
+		return topics;
 	} catch (error) {
 		throw error;
 	}

@@ -32,13 +32,50 @@ router.post("/createDevice", async (req, res) => {
 		// Create the new device and add it to the associated space
 		const device = new Device(deviceData);
 
-		client.publish("Nuevo dispositivo", device.topic, (err) => {
-			if (err) {
-				console.error("Error publishing message:", err);
-			} else {
-				console.log("Mensaje enviado");
-			}
-		});
+		if (device.type == "aire" || device.type == "luz") {
+			client.publish("Topico extra", device.topic + " / Switch", (err) => {
+				if (err) {
+					console.error("Error publishing message:", err);
+				} else {
+					console.log("Mensaje enviado");
+				}
+			});
+		}
+
+		if (device.type == "controlAcceso") {
+			client.publish("Topico extra", device.topic + " / Permiso", (err) => {
+				if (err) {
+					console.error("Error publishing message:", err);
+				} else {
+					console.log("Mensaje enviado");
+				}
+			});
+		}
+
+		if (device.type == "tempHum") {
+			client.publish("Topico extra", device.topic + " / Temperatura", (err) => {
+				if (err) {
+					console.error("Error publishing message:", err);
+				} else {
+					console.log("Mensaje enviado");
+				}
+			});
+			client.publish("Topico extra", device.topic + " / Humedad", (err) => {
+				if (err) {
+					console.error("Error publishing message:", err);
+				} else {
+					console.log("Mensaje enviado");
+				}
+			});
+		} else {
+			client.publish("Nuevo dispositivo", device.topic, (err) => {
+				if (err) {
+					console.error("Error publishing message:", err);
+				} else {
+					console.log("Mensaje enviado");
+				}
+			});
+		}
 
 		const savedDevice = await device.save();
 

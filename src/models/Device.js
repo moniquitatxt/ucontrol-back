@@ -7,6 +7,12 @@ const HistorySchema = new mongoose.Schema({
 	updatedOn: { type: Date, default: toVenezuelanTime() },
 });
 
+const ConditionSchema = new mongoose.Schema({
+	listenerDevice: { type: String, required: true },
+	condition: { type: String, required: true },
+	conditionValue: { type: String },
+});
+
 const DeviceSchema = new mongoose.Schema({
 	name: { type: String, required: true },
 	description: { type: String },
@@ -15,7 +21,8 @@ const DeviceSchema = new mongoose.Schema({
 	createdBy: { type: String, required: true },
 	createdOn: { type: Date, default: toVenezuelanTime() },
 	history: [HistorySchema],
-	topic: { type: String, required: true },
+	conditions: ConditionSchema,
+	topic: { type: String, required: true, unique: true },
 });
 
 DeviceSchema.statics.getAllTopics = async function () {

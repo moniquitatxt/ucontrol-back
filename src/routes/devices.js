@@ -208,12 +208,13 @@ router.post("/getDeviceById", async (req, res) => {
 
 router.patch("/updateDevice", async (req, res) => {
 	const { id } = req.body;
-	const { name, description, dvt, topic, fields, userName } = req.body;
+	const { name, description, dvt, topic, fields, conditions, userName } =
+		req.body;
 
 	try {
 		const device = await Device.findByIdAndUpdate(
 			id,
-			{ name, description, dvt, topic },
+			{ name, description, dvt, topic, conditions },
 			{ new: true }
 		);
 		if (!device) {

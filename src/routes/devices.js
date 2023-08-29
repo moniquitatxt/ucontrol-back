@@ -33,13 +33,18 @@ router.post("/createDevice", async (req, res) => {
 		const device = new Device(deviceData);
 
 		if (device.type == "aire" || device.type == "luz") {
-			client.publish("Topico extra", device.topic + " / Switch", (err) => {
-				if (err) {
-					console.error("Error publishing message:", err);
-				} else {
-					console.log("Mensaje enviado");
+			client.publish(
+				"Topico extra",
+				device.topic + " / Switch",
+				{ qos: 1 },
+				(err) => {
+					if (err) {
+						console.error("Error publishing message:", err);
+					} else {
+						console.log("Mensaje enviado");
+					}
 				}
-			});
+			);
 		}
 
 		if (device.type == "controlAcceso") {
@@ -68,11 +73,11 @@ router.post("/createDevice", async (req, res) => {
 				}
 			});
 		} else {
-			client.publish("Nuevo dispositivo", device.topic, (err) => {
+			client.publish("Nuevo dispositivo", device.topic, { qos: 2 }, (err) => {
 				if (err) {
 					console.error("Error publishing message:", err);
 				} else {
-					console.log("Mensaje enviado");
+					console.log("Mensaje enviado de nuevo dispositivo");
 				}
 			});
 		}

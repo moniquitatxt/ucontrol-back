@@ -52,22 +52,12 @@ client.on("message", (topic, message) => {
 	if (topic == "Nuevo Dispositivo") {
 		console.log("Suscrito al nuevo dispositivo");
 		client.subscribe(message.toString());
-	}
-	if (topic == "Topico extra") {
+	} else if (topic == "Topico extra") {
 		console.log("Suscrito al tópico extra");
 		console.log(message.toString());
-		console.log(message.toString() + " / Extra");
 		client.subscribe(message.toString());
-		client.subscribe(message.toString() + " / Extra");
-	}
-
-	//writeApi.useDefaultTags({ region: "west" });
-	if (
-		topic == "Control de acceso" ||
-		topic == "Nuevo Dispositivo" ||
-		topic == "Topico extra"
-	) {
-		console.log(topic);
+	} else if (topic == "Control de acceso") {
+		console.log("Es otro topico");
 	} else {
 		const topico = topic.toString();
 		const mensaje = message.toString();

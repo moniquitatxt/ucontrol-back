@@ -152,6 +152,8 @@ router.delete("/deleteSpace", async (req, res) => {
 			await Device.findByIdAndDelete(deviceId);
 		}
 
+		await Permission.deleteMany({ spaceId });
+
 		// If the space has a parent space, remove itself from the parent's subSpaces array
 		if (space.parentSpace) {
 			const parentSpace = await Space.findById(space.parentSpace);

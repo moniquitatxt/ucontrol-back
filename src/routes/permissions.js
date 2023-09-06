@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 import Permission from "../models/Permissions.js";
+import Device from "../models/Device.js";
 import User from "../models/user.js";
 import Space from "../models/Space.js";
 
@@ -72,7 +73,7 @@ router.get("/getUserPermissions", async (req, res) => {
 	}
 });
 // Recursive function to get all subspaces
-const getAllSubspaces = async (spaceId) => {
+export const getAllSubspaces = async (spaceId) => {
 	const subspaceIds = await Space.find({ parentSpace: spaceId }).distinct(
 		"_id"
 	);
@@ -103,6 +104,23 @@ router.get("/getUserSpaces/:userId", async (req, res) => {
 			allSubspaces = allSubspaces.concat(subspaces);
 		}
 
+		// Check if the user is an admin
+		const user = await User.findById(userId);
+		if (user && user.type === "admin") {
+			// If the user is an admin, add spaces they've created
+			const adminSpaces = await Space.find({ creatorId: userId });
+			// Filter out any duplicates by merging adminSpaces and spaces
+			spaces = [
+				...adminSpaces,
+				...spaces.filter(
+					(space) =>
+						!adminSpaces.some(
+							(adminSpace) => adminSpace._id.toString() === space._id.toString()
+						)
+				),
+			];
+		}
+
 		// Find and return the spaces corresponding to the retrieved IDs
 		const spaces = await Space.find({
 			$or: [{ _id: { $in: allSubspaces } }, { _id: { $in: permissionSpaces } }],
@@ -118,6 +136,57 @@ router.get("/getUserSpaces/:userId", async (req, res) => {
 	}
 });
 
+// Route to get all devices from spaces the user has permissions to
+router.get("/getUserDevices/:userId", async (req, res) => {
+	const { userId } = req.params;
+
+	try {
+		// Find space IDs for which the user has permissions
+		const permissionSpaces = await Permission.find({ userId }).distinct(
+			"spaceId"
+		);
+
+		// Retrieve all subspaces recursively for each space
+		let allSubspaces = [];
+		for (const spaceId of permissionSpaces) {
+			const subspaces = await getAllSubspaces(spaceId);
+			allSubspaces = allSubspaces.concat(subspaces);
+		}
+
+		// Check if the user is an admin
+		const user = await User.findById(userId);
+		if (user && user.type === "admin") {
+			// If the user is an admin, add spaces they've created
+			const adminSpaces = await Space.find({ creatorId: userId });
+			// Filter out any duplicates by merging adminSpaces and spaces
+			permissionSpaces.push(
+				...adminSpaces.map((adminSpace) => adminSpace._id.toString())
+			);
+		}
+
+		const devices = [];
+
+		// Fetch devices for each space
+		for (const spaceId of permissionSpaces) {
+			const space = await Space.findById(spaceId);
+			if (space) {
+				const deviceIds = space.devices.map((deviceId) => deviceId.toString());
+				const spaceDevices = await Device.find({
+					_id: { $in: deviceIds },
+				});
+				devices.push(...spaceDevices);
+			}
+		}
+
+		res.status(200).json({
+			success: true,
+			message: "Devices retrieved successfully",
+			data: devices,
+		});
+	} catch (err) {
+		res.status(500).json({ success: false, message: err.message });
+	}
+});
 // Get all users for a space
 router.get("/getSpaceUsers", async (req, res) => {
 	const { spaceId } = req.body;

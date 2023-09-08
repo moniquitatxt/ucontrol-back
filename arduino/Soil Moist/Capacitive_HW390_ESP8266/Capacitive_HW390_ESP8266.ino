@@ -2,20 +2,40 @@
 
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
+#include <InfluxDbClient.h>
+#include <InfluxDbCloud.h>
 
-//wifi
-const char* ssid = "ABACANTVWIFI5B5F";
-const char* password = "85047929266670";
+#if defined(ESP8266)
+#include <ESP8266WiFiMulti.h>
+ESP8266WiFiMulti wifiMulti;
+#endif
+
+// wifi
+const char* ssid = "luisa";
+const char* password = "123luisa";
+
+#define INFLUXDB_URL "http://172.29.91.241:8086"
+#define INFLUXDB_TOKEN "oaz4hK-TQdb-5nBCuXs6zQCVa1uAn_QgIAeztBFJOWDx5rJVZ69zXKSU4ova8ShYRNNSf3QJShnsx5aVIcDI3Q=="
+#define INFLUXDB_ORG "1bbe5f3a949fb99b"
+#define INFLUXDB_BUCKET "ucontrol-arm21"
+
+// Time zone info
+#define TZ_INFO "UTC+4"
+
+// Declare InfluxDB client instance with preconfigured InfluxCloud certificate
+InfluxDBClient influxClient(INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLUXDB_TOKEN, InfluxDbCloud2CACert);
+
 
 //MQTT Server
-const char* mqtt_server = "192.168.250.6";
-const char* mqtt_clientid = "pato";
+const char* mqtt_server = "25.58.78.34";
 const char* mqtt_username = "ucontrol";
 const char* mqtt_password = "Ucontrol123";
 const int mqtt_port = 1884;
 
-const String TOPIC = "Escuela de Ingeniería Civil / Oficina Profe Yolanda / Sensor en macetas";
-const String ACTION = "Escuela de Ingeniería Civil / Oficina Profe Yolanda / Sensor de Movimiento / Switch";
+const String TOPIC = "Escuela de Ingeniería Civil / Oficina Profe Yolanda / Sensor de macetas";
+
+// Declare Data point
+Point sensor(TOPIC);
 
 /**** Secure WiFi Connectivity Initialisation *****/
 WiFiClient espClient;
@@ -29,29 +49,29 @@ char msg[MSG_BUFFER_SIZE];
 int value = 0;
 
 
-const int AirValue = 650;
-const int WaterValue = 350;
+const int AirValue = 950;
+const int WaterValue = 450;
 int intervals = (AirValue - WaterValue) / 3;
 const int SensorPin = A0;
 int soilMoistureValue = 0;
 int soilmoisturepercent = 0;
 
+/************* Connect to WiFi ***********/
 void setup_wifi() {
+
   delay(10);
   Serial.println();
   Serial.print("Connecting to ");
   Serial.println(ssid);
 
   WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(5000);
+  wifiMulti.addAP(ssid, password);
+  Serial.print("Connecting to wifi");
+  while (wifiMulti.run() != WL_CONNECTED) {
     Serial.print(".");
+    delay(100);
   }
-
-  randomSeed(micros());
-
+  Serial.println();
   Serial.println("");
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
@@ -59,35 +79,6 @@ void setup_wifi() {
 }
 
 
-/***** Call back Method for Receiving MQTT messages *****/
-
-// void callback(char* topic, byte* payload, unsigned int length) {
-//   String incommingMessage = "";
-
-//   String action = "";
-
-//   for (int i = 0; i < length; i++) {
-//     incommingMessage += (char)payload[i];
-//   }
-//   if (strcmp(topic, TOPIC.c_str()) == 0) {
-//     Serial.println("Message arrived [" + String(topic) + "]: ");
-//   }
-
-//   check incoming message
-//   if (strcmp(topic, topicPIR) == 0) {
-//     if (incommingMessage.equals("ON")) {
-//       Send back to arduino action to turn on bulb
-
-//       NodeMCU_SS.print(String("ON") + String('\n'));
-
-//     } else if (incommingMessage.equals("OFF")) {
-//       Send back to arduino action to turn off bulb
-//       NodeMCU_SS.print(String("OFF") + String('\n'));
-//     }
-//   } else {
-//     Serial.println("Nothing");
-//   }
-// }
 
 
 /************* Connect to MQTT Broker ***********/
@@ -113,40 +104,84 @@ void setup() {
 
   setup_wifi();
 
-  client.setServer(mqtt_server, mqtt_port);
+  // client.setServer(mqtt_server, mqtt_port);
   // client.setCallback(callback);
+  delay(500);
+  timeSync(TZ_INFO, "pool.ntp.org", "time.nis.gov");
+
+  if (influxClient.validateConnection()) {
+    Serial.print("Connected to InfluxDB: ");
+    Serial.println(influxClient.getServerUrl());
+    sensor.addTag("measurement", "soilMoist");
+  } else {
+    Serial.print("InfluxDB connection failed: ");
+    Serial.println(influxClient.getLastErrorMessage());
+  }
 }
 
 
 void loop() {
 
-  soilMoistureValue = analogRead(SensorPin);  //put Sensor insert into soil
-  Serial.println(soilMoistureValue);
-
- 
-  if (!client.connected()) {
-    reconnect();
-  }
-  client.loop();
+  if (influxClient.validateConnection()) {
+    sensor.clearFields();
 
 
+    //Read data and store it
+    soilMoistureValue = analogRead(SensorPin);  //put Sensor insert into soil
+    soilmoisturepercent = map(soilMoistureValue, AirValue, WaterValue, 0, 100);
+    Serial.println(soilmoisturepercent);
 
-  unsigned long now = millis();
-  if (now - lastMsg > 2000) {
-    lastMsg = now;
-    
-    if(soilMoistureValue < WaterValue){
 
-    client.publish(TOPIC.c_str(), "Inundación");
+      sensor.addField("soilValue", soilmoisturepercent);
 
-    }else if ( soilMoistureValue >= WaterValue && soilMoistureValue < AirValue){
-      
-    client.publish(TOPIC.c_str(), "Normal");
-    }else{
-      
-    client.publish(TOPIC.c_str(), "Seca");
+    // if (!client.connected()) {
+    //   reconnect();
+    // }
+    // client.loop();
+
+
+    //Broker
+    unsigned long now = millis();
+    // if (now - lastMsg > 2000) {
+    //   lastMsg = now;
+
+    if (soilMoistureValue < WaterValue) {
+
+      //  client.publish(TOPIC.c_str(), "Inundación");
+      sensor.addField("soilState", "Inundación");
+
+    } else if (soilMoistureValue >= WaterValue && soilMoistureValue < AirValue) {
+
+      //   client.publish(TOPIC.c_str(), "Normal");
+      sensor.addField("soilState", "Normal");
+    } else {
+
+      //   client.publish(TOPIC.c_str(), "Seca");
+      sensor.addField("soilState", "Seca");
+    }
+    //  }
+
+
+
+    // Print what are we exactly writing
+    Serial.print("Writing: ");
+    Serial.println(sensor.toLineProtocol());
+    // Check WiFi connection and reconnect if needed
+    if (wifiMulti.run() != WL_CONNECTED) {
+      Serial.println("Wifi connection lost");
     }
 
+    // Write point
+    if (!influxClient.writePoint(sensor)) {
+      Serial.print("InfluxDB write failed: ");
+      Serial.println(influxClient.getLastErrorMessage());
+    }
+
+  } else {
+    Serial.print("InfluxDB connection failed: ");
+    Serial.println(influxClient.getLastErrorMessage());
   }
-  delay(5000);
+
+
+  delay(30000);
 }

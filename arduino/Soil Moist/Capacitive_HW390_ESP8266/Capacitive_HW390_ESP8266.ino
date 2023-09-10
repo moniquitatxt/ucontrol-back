@@ -32,10 +32,10 @@ const char* mqtt_username = "ucontrol";
 const char* mqtt_password = "Ucontrol123";
 const int mqtt_port = 1884;
 
-const String TOPIC = "Escuela de Ingeniería Civil / Oficina Profe Yolanda / Sensor de macetas";
+const String HW_TOPIC = "Escuela de Ingeniería Civil / Oficina Profe Yolanda / Sensor de macetas";
 
 // Declare Data point
-Point sensor(TOPIC);
+Point HW_sensor(HW_TOPIC);
 
 /**** Secure WiFi Connectivity Initialisation *****/
 WiFiClient espClient;
@@ -88,7 +88,7 @@ void reconnect() {
 
     if (client.connect("HW390_ESP", mqtt_username, mqtt_password)) {
       Serial.println("connected");
-      client.subscribe(TOPIC.c_str());
+      client.subscribe(HW_TOPIC.c_str());
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -112,7 +112,7 @@ void setup() {
   if (influxClient.validateConnection()) {
     Serial.print("Connected to InfluxDB: ");
     Serial.println(influxClient.getServerUrl());
-    sensor.addTag("measurement", "soilMoist");
+    HW_sensor.addTag("deviceType", "hum");
   } else {
     Serial.print("InfluxDB connection failed: ");
     Serial.println(influxClient.getLastErrorMessage());
@@ -123,7 +123,7 @@ void setup() {
 void loop() {
 
   if (influxClient.validateConnection()) {
-    sensor.clearFields();
+    HW_sensor.clearFields();
 
 
     //Read data and store it
@@ -132,7 +132,7 @@ void loop() {
     Serial.println(soilmoisturepercent);
 
 
-      sensor.addField("soilValue", soilmoisturepercent);
+      HW_sensor.addField("soilValue", soilmoisturepercent);
 
     // if (!client.connected()) {
     //   reconnect();
@@ -147,17 +147,17 @@ void loop() {
 
     if (soilMoistureValue < WaterValue) {
 
-      //  client.publish(TOPIC.c_str(), "Inundación");
-      sensor.addField("soilState", "Inundación");
+      //  client.publish(HW_TOPIC.c_str(), "Inundación");
+      HW_sensor.addField("soilState", "Inundación");
 
     } else if (soilMoistureValue >= WaterValue && soilMoistureValue < AirValue) {
 
-      //   client.publish(TOPIC.c_str(), "Normal");
-      sensor.addField("soilState", "Normal");
+      //   client.publish(HW_TOPIC.c_str(), "Normal");
+      HW_sensor.addField("soilState", "Normal");
     } else {
 
-      //   client.publish(TOPIC.c_str(), "Seca");
-      sensor.addField("soilState", "Seca");
+      //   client.publish(HW_TOPIC.c_str(), "Seca");
+      HW_sensor.addField("soilState", "Seca");
     }
     //  }
 
@@ -165,14 +165,14 @@ void loop() {
 
     // Print what are we exactly writing
     Serial.print("Writing: ");
-    Serial.println(sensor.toLineProtocol());
+    Serial.println(HW_sensor.toLineProtocol());
     // Check WiFi connection and reconnect if needed
     if (wifiMulti.run() != WL_CONNECTED) {
       Serial.println("Wifi connection lost");
     }
 
     // Write point
-    if (!influxClient.writePoint(sensor)) {
+    if (!influxClient.writePoint(HW_sensor)) {
       Serial.print("InfluxDB write failed: ");
       Serial.println(influxClient.getLastErrorMessage());
     }

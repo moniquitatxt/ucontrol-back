@@ -4,11 +4,11 @@
 #include <PubSubClient.h>
 
 //wifi
-const char* ssid = "ABACANTVWIFI5B5F";
-const char* password = "85047929266670";
+const char* ssid = "luisa";
+const char* password = "123luisa";
 
 //MQTT Server
-const char* mqtt_server = "192.168.250.6";
+const char* mqtt_server = "172.29.91.241";
 const char* mqtt_clientid = "pato";
 const char* mqtt_username = "ucontrol";
 const char* mqtt_password = "Ucontrol123";
@@ -71,11 +71,11 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
     if (incommingMessage.equals("1")) {
       Serial.println("From broker: Bulb ON");
-      String ack = String("ON") + String('\n');
+      String ack = String(1) + String('\n');
       NodeMCU_SS.print(ack);
     } else if (incommingMessage.equals("0")) {
       Serial.println("From broker: Bulb OFF");
-      String ack = String("OFF") + String('\n');
+      String ack = String(0) + String('\n');
       NodeMCU_SS.print(ack);
     }
   } else {

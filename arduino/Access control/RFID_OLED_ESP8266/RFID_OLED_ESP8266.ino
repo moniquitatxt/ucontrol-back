@@ -35,9 +35,6 @@ const int mqtt_port = 1884;
 const String TOPIC = "Escuela de Ingeniería Civil / Oficina Profe Yolanda / Acceso";
 const String ACTION = "Escuela de Ingeniería Civil / Oficina Profe Yolanda / Acceso / PERMISSION";
 
-
-const String DEVICE_NAME = "Acceso";
-
 /**** Secure WiFi Connectivity Initialisation *****/
 WiFiClient espClient;
 

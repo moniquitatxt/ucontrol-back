@@ -30,13 +30,13 @@ void ReceiveData() {
 
   if (c == '\n') {
     Serial.println(dataFromNodeMCU);
-    if (dataFromNodeMCU.equals("ON")) {
+    if (dataFromNodeMCU.equals("1")) {
       str = String("1");
       digitalWrite(relayPin, HIGH);
       String espStr = str + String('\n');
       Arduino_SoftSerial.print(espStr);
 
-    } else if (dataFromNodeMCU.equals("OFF")) {
+    } else if (dataFromNodeMCU.equals("0")) {
       str = String("0");
       digitalWrite(relayPin, LOW);
       String espStr = str + String('\n');
@@ -77,6 +77,6 @@ void loop() {
     String espStr = str + String('\n');
     Arduino_SoftSerial.print(espStr);
   }
-  delay(5000);
+  delay(30000);
   ReceiveData();
 }

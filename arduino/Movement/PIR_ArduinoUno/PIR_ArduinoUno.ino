@@ -11,38 +11,6 @@ char c;
 String dataFromNodeMCU;
 
 
-void ReceiveData() {
-
-  while (Arduino_SoftSerial.available() > 0) {
-
-    c = Arduino_SoftSerial.read();
-    if (c == '\n') {
-      break;
-    } else {
-      dataFromNodeMCU += c;
-    }
-  }
-
-  if (c == '\n') {
-    Serial.println(dataFromNodeMCU);
-    if (dataFromNodeMCU.equals("MOVIMIENTO")) {
-      str = String("1");
-     // digitalWrite(relayPin, HIGH);
-      String espStr = str + String('\n');
-      Arduino_SoftSerial.print(espStr);
-
-    } else if (dataFromNodeMCU.equals("NO HAY MOVIMIENTO")) {
-      str = String("0");
-     // digitalWrite(relayPin, LOW);
-      String espStr = str + String('\n');
-      Arduino_SoftSerial.print(espStr);
-    }
-    c = 0;
-    dataFromNodeMCU = "";
-  }
-}
-
-
 void setup() {
   Serial.begin(9600);
   Arduino_SoftSerial.begin(115200);
@@ -70,7 +38,6 @@ int  ESTADO = digitalRead(PIR);
   }
 
 
-  delay(5000);
-  ReceiveData();
-
+  delay(10000);
+  
 }

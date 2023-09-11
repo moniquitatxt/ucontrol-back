@@ -16,7 +16,7 @@ const char* mqtt_username = "ucontrol";
 const char* mqtt_password = "Ucontrol123";
 const int mqtt_port = 1884;
 
-const String TOPIC = "Escuela de Ingeniería Civil / Oficina Profe Yolanda / Bombillo de la oficina";
+const String TOPIC = "Escuela de Ingeniería Civil / Oficina Profe Yolanda / Sensor de agua";
 
 #define INFLUXDB_URL "http://172.29.91.241:8086"
 #define INFLUXDB_TOKEN "oaz4hK-TQdb-5nBCuXs6zQCVa1uAn_QgIAeztBFJOWDx5rJVZ69zXKSU4ova8ShYRNNSf3QJShnsx5aVIcDI3Q=="
@@ -31,7 +31,7 @@ InfluxDBClient influxClient(INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLUXD
 
 
 // Declare Data point
-Point relayControl(TOPIC);
+Point sensorControl(TOPIC);
 
 /**** Secure WiFi Connectivity Initialisation *****/
 WiFiClient espClient;
@@ -101,7 +101,7 @@ void setup() {
   if (influxClient.validateConnection()) {
     Serial.print("Connected to InfluxDB: ");
     Serial.println(influxClient.getServerUrl());
-    relayControl.addTag("deviceType", "luz");
+    sensorControl.addTag("deviceType", "agua");
   } else {
     Serial.print("InfluxDB connection failed: ");
     Serial.println(influxClient.getLastErrorMessage());
@@ -111,7 +111,7 @@ void setup() {
 
 void loop() {
 
-  value = analogRead(WATERPIN);  //put Sensor insert into soil
+  value = analogRead(WATERPIN); 
   Serial.println(value);
 
 
@@ -128,12 +128,18 @@ void loop() {
 
     if (value > 200) {
 
-      client.publish(TOPIC.c_str(), "Inundación");
+      client.publish(TOPIC.c_str(), "1");
+        sensorControl.addField("sensorStatus", "1");
 
     } else {
 
-      client.publish(TOPIC.c_str(), "Seco");
+      client.publish(TOPIC.c_str(), "0");
+        sensorControl.addField("sensorStatus", "0");
     }
+      if (!influxClient.writePoint(sensorControl)) {
+        Serial.print("InfluxDB write failed: ");
+        Serial.println(influxClient.getLastErrorMessage());
+      }
   }
-  delay(5000);
+  delay(30000);
 }

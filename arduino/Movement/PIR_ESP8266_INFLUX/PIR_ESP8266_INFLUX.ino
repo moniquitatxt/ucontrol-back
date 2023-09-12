@@ -16,8 +16,7 @@ const char* mqtt_username = "ucontrol";
 const char* mqtt_password = "Ucontrol123";
 const int mqtt_port = 1884;
 
-
-const String TOPIC = "Escuela de Ingeniería Civil / Oficina Profe Yolanda / Sensor de Movimiento";
+const String TOPIC = "Escuela de Ingeniería Civil / Oficina Profe Yolanda / Sensor de movimiento";
 
 #define INFLUXDB_URL "http://172.29.91.241:8086"
 #define INFLUXDB_TOKEN "oaz4hK-TQdb-5nBCuXs6zQCVa1uAn_QgIAeztBFJOWDx5rJVZ69zXKSU4ova8ShYRNNSf3QJShnsx5aVIcDI3Q=="
@@ -30,7 +29,10 @@ const String TOPIC = "Escuela de Ingeniería Civil / Oficina Profe Yolanda / Sen
 // Declare InfluxDB client instance with preconfigured InfluxCloud certificate
 InfluxDBClient influxClient(INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLUXDB_TOKEN, InfluxDbCloud2CACert);
 
+
+// Declare Data point
 Point sensorControl(TOPIC);
+
 /**** Secure WiFi Connectivity Initialisation *****/
 WiFiClient espClient;
 
@@ -42,10 +44,8 @@ unsigned long lastMsg = 0;
 char msg[MSG_BUFFER_SIZE];
 int value = 0;
 
-SoftwareSerial NodeMCU_SS(D1, D2);
+int sensor = 13;  // Digital pin D7
 
-char c;
-String dataIn;
 
 void setup_wifi() {
   delay(10);
@@ -69,7 +69,6 @@ void setup_wifi() {
   Serial.println(WiFi.localIP());
 }
 
-
 /************* Connect to MQTT Broker ***********/
 void reconnect() {
   while (!client.connected()) {
@@ -86,6 +85,7 @@ void reconnect() {
     }
   }
 }
+
 
 
 void setup() {
@@ -105,49 +105,44 @@ void setup() {
     Serial.print("InfluxDB connection failed: ");
     Serial.println(influxClient.getLastErrorMessage());
   }
-
-  NodeMCU_SS.begin(115200);
-
+  pinMode(sensor, INPUT);  // declare sensor as input
 }
-
-
 void loop() {
-
-  while (NodeMCU_SS.available() > 0) {
-    c = NodeMCU_SS.read();
-    if (c == '\n') {
-      break;
-    } else {
-      dataIn += c;
-    }
-  }
-
 
   if (!client.connected()) {
     reconnect();
   }
   client.loop();
 
- // To Broker
-  if (c == '\n') {
-  sensorControl.clearFields();
-    unsigned long now = millis();
-    if (now - lastMsg > 2000) {
-      lastMsg = now;
 
-      if (dataIn == "1") {
-        client.publish(TOPIC.c_str(), "1");
-        sensorControl.addField("sensorStatus", "1");
-      } else if (dataIn == "0") {
-        client.publish(TOPIC.c_str(), "0");
-        sensorControl.addField("sensorStatus", "0");
-      }  Serial.println(sensorControl.toLineProtocol());
-      if (!influxClient.writePoint(sensorControl)) {
-        Serial.print("InfluxDB write failed: ");
-        Serial.println(influxClient.getLastErrorMessage());
-      }
+  long state = digitalRead(sensor);
+
+
+  unsigned long now = millis();
+  if (now - lastMsg > 2000) {
+    lastMsg = now;
+
+    if (state == HIGH) {
+      Serial.println("Motion detected!");
+
+      client.publish(TOPIC.c_str(), "1");
+      sensorControl.addField("sensorStatus", "1");
+      delay(1000);
+    } else {
+      Serial.println("Motion absent!");
+
+      client.publish(TOPIC.c_str(), "0");
+      sensorControl.addField("sensorStatus", "0");
+      delay(1000);
     }
-    c = 0;
-    dataIn = "";
+
+
+
+
+    if (!influxClient.writePoint(sensorControl)) {
+      Serial.print("InfluxDB write failed: ");
+      Serial.println(influxClient.getLastErrorMessage());
+    }
   }
+  delay(30000);
 }

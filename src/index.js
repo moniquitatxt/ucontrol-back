@@ -7,6 +7,7 @@ import userRoute from "./routes/users.js";
 import spaceRoute from "./routes/spaces.js";
 import permissionRoute from "./routes/permissions.js";
 import deviceRoute from "./routes/devices.js";
+import accessControlUserRoute from "./routes/accessControlUser.js";
 import queriesRoute from "./influxdb/queries.js";
 import client from "./broker.js";
 
@@ -23,6 +24,7 @@ app.use("/api", deviceRoute);
 app.use("/api", spaceRoute);
 app.use("/api", permissionRoute);
 app.use("/api", queriesRoute);
+app.use("/api", accessControlUserRoute);
 
 app.listen(PORT, () => {
 	console.log(`Servidor en el puerto: ${PORT}`);

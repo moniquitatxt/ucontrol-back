@@ -106,6 +106,46 @@ export const getAllSubspaces = async (spaceId) => {
 	return allSubspaces;
 };
 
+router.get("/getSpacesWithAccessControl/:userId", async (req, res) => {
+	const { userId } = req.params;
+	try {
+		const permissionSpaces = await Permission.find({ userId }).distinct(
+			"spaceId"
+		);
+
+		// Retrieve all subspaces recursively for each space
+		let allSubspaces = [];
+		for (const spaceId of permissionSpaces) {
+			const subspaces = await getAllSubspaces(spaceId);
+			allSubspaces = allSubspaces.concat(subspaces);
+		}
+
+		const spacesWithControlAccess = [];
+
+		for (const spaceId of allSubspaces) {
+			const space = await Space.findById(spaceId);
+			if (!space) continue;
+
+			const devices = await Device.find({ _id: { $in: space.devices } });
+
+			for (const device of devices) {
+				if (device.type === "controlAcceso") {
+					spacesWithControlAccess.push(space);
+					break; // No need to check other devices in this space
+				}
+			}
+		}
+
+		res.status(200).json({
+			success: true,
+			message: "Spaces with controlAccess devices retrieved successfully",
+			data: spacesWithControlAccess,
+		});
+	} catch (error) {
+		res.status(500).json({ success: false, message: error.message });
+	}
+});
+
 // Get all permissions for a user
 router.get("/getUserPermissions/:userId", async (req, res) => {
 	const { userId } = req.params;

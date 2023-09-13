@@ -11,11 +11,60 @@ const router = express.Router();
 
 // Crear un nuevo permiso
 router.post("/permission", async (req, res) => {
+	const { email, spaceId, permission } = req.body;
+
+	// Find the user by email
+	const user = await User.findOne({ email });
+
+	if (!user) {
+		return res.status(404).send({
+			success: false,
+			message: "Correo inválido el usuario no existe",
+		});
+	}
+
+	// Check if the user is the creator of the space
+	const space = await Space.findById(spaceId);
+
+	if (!space) {
+		return res.status(404).send({
+			success: false,
+			message: "Espacio no encontrado",
+		});
+	}
+
+	if (space.createdBy === user._id.toString()) {
+		return res.status(403).send({
+			success: false,
+			message:
+				"No puedes otorgar permisos en un espacio que tú mismo has creado",
+		});
+	}
+
+	// Check if the user already has permission in the space
+	const existingPermission = await Permission.findOne({
+		spaceId,
+		userId: user._id,
+	});
+
+	if (existingPermission) {
+		return res.status(400).send({
+			success: false,
+			message: "El usuario ya tiene permisos en este espacio",
+		});
+	}
+
+	// Create and save the new permission
+	const permissionSaved = new Permission({
+		spaceId,
+		userId: user._id,
+		permission,
+	});
+
 	try {
-		const { permission, email } = req.body;
-		const permissionSaved = new Permission(permission);
 		await permissionSaved.save();
 
+		// Send email
 		const transporter = nodemailer.createTransport({
 			service: "Gmail",
 			auth: {
@@ -36,10 +85,9 @@ router.post("/permission", async (req, res) => {
 		res.status(201).json({
 			success: true,
 			message: "La invitación se ha enviado exitosamente",
-			data: permission,
 		});
-	} catch (err) {
-		res.status(500).json({ success: false, message: err.message });
+	} catch (error) {
+		res.status(500).json({ success: false, message: error.message });
 	}
 });
 
@@ -87,6 +135,47 @@ export const getAllSubspaces = async (spaceId) => {
 	return allSubspaces;
 };
 
+router.get("/getUserParentSpaces/:userId", async (req, res) => {
+	const { userId } = req.params;
+
+	try {
+		// Find space IDs for which the user has permissions
+		const permissionSpaces = await Permission.find({ userId }).distinct(
+			"spaceId"
+		);
+
+		// Check if the user is an admin
+		const user = await User.findById(userId);
+		if (user && user.admin === true) {
+			// If the user is an admin, add spaces they've created
+			const adminSpaces = await Space.find({ creatorId: userId });
+			// Filter out any duplicates by merging adminSpaces and spaces
+			spaces = [
+				...adminSpaces,
+				...spaces.filter(
+					(space) =>
+						!adminSpaces.some(
+							(adminSpace) => adminSpace._id.toString() === space._id.toString()
+						)
+				),
+			];
+		}
+
+		// Find and return the spaces corresponding to the retrieved IDs
+		const spaces = await Space.find({
+			$or: [{ _id: { $in: permissionSpaces } }],
+		});
+
+		res.status(200).json({
+			success: true,
+			message: "Spaces retrieved successfully",
+			data: spaces,
+		});
+	} catch (err) {
+		res.status(500).json({ success: false, message: err.message });
+	}
+});
+
 // Route to get all spaces the user has permissions to, including subspaces
 router.get("/getUserSpaces/:userId", async (req, res) => {
 	const { userId } = req.params;
@@ -106,7 +195,7 @@ router.get("/getUserSpaces/:userId", async (req, res) => {
 
 		// Check if the user is an admin
 		const user = await User.findById(userId);
-		if (user && user.type === "admin") {
+		if (user && user.admin === true) {
 			// If the user is an admin, add spaces they've created
 			const adminSpaces = await Space.find({ creatorId: userId });
 			// Filter out any duplicates by merging adminSpaces and spaces
@@ -155,7 +244,7 @@ router.get("/getUserDevices/:userId", async (req, res) => {
 
 		// Check if the user is an admin
 		const user = await User.findById(userId);
-		if (user && user.type === "admin") {
+		if (user && user.admin === true) {
 			// If the user is an admin, add spaces they've created
 			const adminSpaces = await Space.find({ creatorId: userId });
 			// Filter out any duplicates by merging adminSpaces and spaces

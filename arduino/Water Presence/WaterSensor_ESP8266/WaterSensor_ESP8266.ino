@@ -5,23 +5,41 @@
 #include <InfluxDbClient.h>
 #include <InfluxDbCloud.h>
 
+// //wifi
+// const char* ssid = "luisa";
+// const char* password = "123luisa";
+
+// //MQTT Server
+// const char* mqtt_server = "172.29.91.241";
+// const char* mqtt_clientid = "pato";
+// const char* mqtt_username = "ucontrol";
+// const char* mqtt_password = "Ucontrol123";
+// const int mqtt_port = 1884;
+
 //wifi
-const char* ssid = "luisa";
-const char* password = "123luisa";
+const char* ssid = "Cleopatra";
+const char* password = "11990587";
 
 //MQTT Server
-const char* mqtt_server = "172.29.91.241";
-const char* mqtt_clientid = "pato";
+// const char* mqtt_server = "172.29.91.241";
+// const char* mqtt_username = "ucontrol";
+// const char* mqtt_password = "Ucontrol123";
+// const int mqtt_port = 1884;
+
+//MQTT Server
+const char* mqtt_server = "192.168.0.107";
 const char* mqtt_username = "ucontrol";
 const char* mqtt_password = "Ucontrol123";
 const int mqtt_port = 1884;
 
-const String TOPIC = "Escuela de Ingeniería Civil / Oficina Profe Yolanda / Bombillo de la oficina";
+const String TOPIC = "Escuela de Ingeniería Civil / Oficina Profe Yolanda / Sensor de agua";
 
 #define INFLUXDB_URL "http://172.29.91.241:8086"
 #define INFLUXDB_TOKEN "oaz4hK-TQdb-5nBCuXs6zQCVa1uAn_QgIAeztBFJOWDx5rJVZ69zXKSU4ova8ShYRNNSf3QJShnsx5aVIcDI3Q=="
 #define INFLUXDB_ORG "1bbe5f3a949fb99b"
 #define INFLUXDB_BUCKET "ucontrol-arm21"
+
+
 
 // Time zone info
 #define TZ_INFO "UTC+4"
@@ -98,14 +116,14 @@ void setup() {
   delay(500);
   timeSync(TZ_INFO, "pool.ntp.org", "time.nis.gov");
 
-  if (influxClient.validateConnection()) {
-    Serial.print("Connected to InfluxDB: ");
-    Serial.println(influxClient.getServerUrl());
-    relayControl.addTag("deviceType", "luz");
-  } else {
-    Serial.print("InfluxDB connection failed: ");
-    Serial.println(influxClient.getLastErrorMessage());
-  }
+  // if (influxClient.validateConnection()) {
+  //   Serial.print("Connected to InfluxDB: ");
+  //   Serial.println(influxClient.getServerUrl());
+  //   relayControl.addTag("deviceType", "luz");
+  // } else {
+  //   Serial.print("InfluxDB connection failed: ");
+  //   Serial.println(influxClient.getLastErrorMessage());
+  // }
 }
 
 
@@ -128,12 +146,12 @@ void loop() {
 
     if (value > 200) {
 
-      client.publish(TOPIC.c_str(), "Inundación");
+      client.publish(TOPIC.c_str(), "1");
 
     } else {
 
-      client.publish(TOPIC.c_str(), "Seco");
+      client.publish(TOPIC.c_str(), "0");
     }
   }
-  delay(5000);
+  delay(30000);
 }

@@ -144,23 +144,6 @@ router.get("/getUserParentSpaces/:userId", async (req, res) => {
 			"spaceId"
 		);
 
-		// Check if the user is an admin
-		const user = await User.findById(userId);
-		if (user && user.admin === true) {
-			// If the user is an admin, add spaces they've created
-			const adminSpaces = await Space.find({ creatorId: userId });
-			// Filter out any duplicates by merging adminSpaces and spaces
-			spaces = [
-				...adminSpaces,
-				...spaces.filter(
-					(space) =>
-						!adminSpaces.some(
-							(adminSpace) => adminSpace._id.toString() === space._id.toString()
-						)
-				),
-			];
-		}
-
 		// Find and return the spaces corresponding to the retrieved IDs
 		const spaces = await Space.find({
 			$or: [{ _id: { $in: permissionSpaces } }],
@@ -191,23 +174,6 @@ router.get("/getUserSpaces/:userId", async (req, res) => {
 		for (const spaceId of permissionSpaces) {
 			const subspaces = await getAllSubspaces(spaceId);
 			allSubspaces = allSubspaces.concat(subspaces);
-		}
-
-		// Check if the user is an admin
-		const user = await User.findById(userId);
-		if (user && user.admin === true) {
-			// If the user is an admin, add spaces they've created
-			const adminSpaces = await Space.find({ creatorId: userId });
-			// Filter out any duplicates by merging adminSpaces and spaces
-			spaces = [
-				...adminSpaces,
-				...spaces.filter(
-					(space) =>
-						!adminSpaces.some(
-							(adminSpace) => adminSpace._id.toString() === space._id.toString()
-						)
-				),
-			];
 		}
 
 		// Find and return the spaces corresponding to the retrieved IDs
@@ -242,29 +208,21 @@ router.get("/getUserDevices/:userId", async (req, res) => {
 			allSubspaces = allSubspaces.concat(subspaces);
 		}
 
-		// Check if the user is an admin
-		const user = await User.findById(userId);
-		if (user && user.admin === true) {
-			// If the user is an admin, add spaces they've created
-			const adminSpaces = await Space.find({ creatorId: userId });
-			// Filter out any duplicates by merging adminSpaces and spaces
-			permissionSpaces.push(
-				...adminSpaces.map((adminSpace) => adminSpace._id.toString())
-			);
-		}
+		const spaces = await Space.find({
+			$or: [{ _id: { $in: allSubspaces } }, { _id: { $in: permissionSpaces } }],
+		});
 
 		const devices = [];
 
 		// Fetch devices for each space
-		for (const spaceId of permissionSpaces) {
-			const space = await Space.findById(spaceId);
-			if (space) {
-				const deviceIds = space.devices.map((deviceId) => deviceId.toString());
-				const spaceDevices = await Device.find({
-					_id: { $in: deviceIds },
-				});
-				devices.push(...spaceDevices);
-			}
+		for (const spaceData of spaces) {
+			const deviceIds = spaceData.devices.map((deviceId) =>
+				deviceId.toString()
+			);
+			const spaceDevices = await Device.find({
+				_id: { $in: deviceIds },
+			});
+			devices.push(...spaceDevices);
 		}
 
 		res.status(200).json({

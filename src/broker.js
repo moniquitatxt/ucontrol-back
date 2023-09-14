@@ -30,13 +30,19 @@ client.on("connect", () => {
 			const topics = await Device.getAllTopics();
 			// Subscribe to all topics retrieved from the database
 			topics.forEach((topic) => {
-				client.subscribe(topic, (error) => {
-					if (error) {
-						console.error(`Error al suscribirse al tópico ${topic}:`, error);
-					} else {
-						console.log(`Suscrito con éxito a ${topic}`);
-					}
-				});
+				if (
+					topic ==
+					"Escuela de Ingeniería Civil / Oficina Profe Yolanda / Control de acceso a la oficina"
+				) {
+					console.log("ignorado con exito");
+				} else
+					client.subscribe(topic, (error) => {
+						if (error) {
+							console.error(`Error al suscribirse al tópico ${topic}:`, error);
+						} else {
+							console.log(`Suscrito con éxito a ${topic}`);
+						}
+					});
 			});
 		} catch (error) {
 			console.error("Error al obtener tópicos", error);
@@ -54,8 +60,6 @@ client.on("message", (topic, message) => {
 		console.log("Suscrito al tópico extra");
 		console.log(message.toString());
 		client.subscribe(message.toString());
-	} else if (topic == "Control de acceso") {
-		console.log("Es otro topico");
 	} else {
 		const topico = topic.toString();
 		const mensaje = message.toString();

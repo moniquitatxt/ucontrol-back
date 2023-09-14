@@ -106,6 +106,71 @@ export const getAllSubspaces = async (spaceId) => {
 	return allSubspaces;
 };
 
+router.get("/getSpacesWithNoAccessControl/:userId", async (req, res) => {
+	const { userId } = req.params;
+	try {
+		const permissionSpaces = await Permission.find({ userId }).distinct(
+			"spaceId"
+		);
+
+		// Retrieve all subspaces recursively for each space
+		let allSubspaces = [];
+		for (const spaceId of permissionSpaces) {
+			const subspaces = await getAllSubspaces(spaceId);
+			allSubspaces = allSubspaces.concat(subspaces);
+		}
+
+		const spacesWithNoControlAccess = [];
+
+		for (const spaceId of permissionSpaces) {
+			const space = await Space.findById(spaceId);
+			if (!space) continue;
+
+			const devices = await Device.find({ _id: { $in: space.devices } });
+
+			let hasControlAccessDevice = false; // Flag to check if the space has a controlAcceso device
+
+			for (const device of devices) {
+				if (device.type === "controlAcceso") {
+					hasControlAccessDevice = true;
+					break; // No need to check other devices in this space
+				}
+			}
+
+			if (!hasControlAccessDevice) {
+				spacesWithNoControlAccess.push(space); // Only add if no controlAcceso device
+			}
+		}
+
+		for (const spaceId of allSubspaces) {
+			const space = await Space.findById(spaceId);
+			if (!space) continue;
+
+			const devices = await Device.find({ _id: { $in: space.devices } });
+
+			let hasControlAccessDevice = false; // Flag to check if the space has a controlAcceso device
+
+			for (const device of devices) {
+				if (device.type === "controlAcceso") {
+					hasControlAccessDevice = true;
+					break; // No need to check other devices in this space
+				}
+			}
+
+			if (!hasControlAccessDevice) {
+				spacesWithNoControlAccess.push(space); // Only add if no controlAcceso device
+			}
+		}
+		res.status(200).json({
+			success: true,
+			message: "Spaces with controlAccess devices retrieved successfully",
+			data: spacesWithNoControlAccess,
+		});
+	} catch (error) {
+		res.status(500).json({ success: false, message: error.message });
+	}
+});
+
 router.get("/getSpacesWithAccessControl/:userId", async (req, res) => {
 	const { userId } = req.params;
 	try {
@@ -183,14 +248,22 @@ router.get("/getUserPermissions/:userId", async (req, res) => {
 			.select("_id permission userId spaceId"); // Select the fields you need
 
 		// Step 3: Construct the desired data structure
-		const formattedPermissions = permissions.map((permission) => ({
-			id: permission._id,
-			userId: permission.userId._id, // Add userId
-			userName: permission.userId.name, // Add userName
-			userEmail: permission.userId.email,
-			spaceName: permission.spaceId.name,
-			type: permission.permission,
-		}));
+		const formattedPermissions = [];
+
+		permissions.map((permission) => {
+			if (permission.userId._id.toString() !== userId) {
+				console.log(permission.userId._id.toString());
+				console.log(userId);
+				formattedPermissions.push({
+					id: permission._id,
+					userId: permission.userId._id, // Add userId
+					userName: permission.userId.name, // Add userName
+					userEmail: permission.userId.email,
+					spaceName: permission.spaceId.name,
+					type: permission.permission,
+				});
+			}
+		});
 		// Step 4: Return the formatted permissions in the route
 		res.status(200).json({
 			success: true,

@@ -1,6 +1,7 @@
 import express from "express";
 import Space from "../models/Space.js";
 import Permission from "../models/Permissions.js";
+import Device from "../models/Device.js";
 
 const router = express.Router();
 

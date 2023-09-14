@@ -88,11 +88,11 @@ control.on("message", async (topic, message) => {
 			if (userHistoryToday.status === false) {
 				// User is entering
 				userHistoryToday.status = true;
-				userHistoryToday.entered = new Date();
+				userHistoryToday.entered.push(new Date());
 			} else {
 				// User is getting out
 				userHistoryToday.status = false;
-				userHistoryToday.gotOut = new Date();
+				userHistoryToday.gotOut.push(new Date());
 			}
 		}
 

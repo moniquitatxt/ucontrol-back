@@ -36,7 +36,6 @@ control.on("connect", () => {
 });
 
 control.on("message", async (topic, message) => {
-	console.log("Este es el de control de acceso");
 	topic = topic.toString();
 	const eCard = message.toString().trim();
 	try {
@@ -48,18 +47,16 @@ control.on("message", async (topic, message) => {
 
 		const accessControlSpace = await AccessControlSpace.findOne({ topic });
 		if (!accessControlSpace.status) {
-			control.publish(topic + " / Permiso", "El espacio está cerrado", {
+			control.publish(topic + " / Permiso", "El espacio esta cerrado", {
 				qos: 1,
 			});
-			throw new Error("El espacio está cerrado");
+			throw new Error("El espacio esta cerrado");
 		}
 
 		if (!accessControlSpace.allowedUsers.includes(accessControlUser._id)) {
-			control.publish(
-				topic + " / Permiso",
-				"El usuario no tiene acceso a este espacio",
-				{ qos: 1 }
-			);
+			control.publish(topic + " / Permiso", "No tiene acceso a este espacio", {
+				qos: 1,
+			});
 
 			throw new Error("El usuario no tiene acceso a este espacio");
 		}
@@ -100,11 +97,7 @@ control.on("message", async (topic, message) => {
 		}
 
 		await accessControlSpace.save(); //
-		control.publish(
-			topic + " / Permiso",
-			"Se ha permitido el acceso al usuario",
-			{ qos: 1 }
-		);
+		control.publish(topic + " / Permiso", "Acceso concedido", { qos: 1 });
 
 		console.log(accessControlUser);
 	} catch (error) {

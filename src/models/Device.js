@@ -33,13 +33,12 @@ DeviceSchema.statics.getAllTopics = async function () {
 			if (device.type == "aire" || device.type == "luz") {
 				topics.push(device.topic + " / Switch");
 			}
-			if (device.type == "controlAcceso") {
-				topics.push(device.topic + " / Permiso");
-			}
+
 			if (device.type == "tempHum") {
 				topics.push(device.topic + " / Temperatura");
 				topics.push(device.topic + " / Humedad");
-			} else {
+			}
+			if (!(device.type == "controlAcceso")) {
 				topics.push(device.topic);
 			}
 		});

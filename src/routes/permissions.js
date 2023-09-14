@@ -122,7 +122,7 @@ router.get("/getSpacesWithAccessControl/:userId", async (req, res) => {
 
 		const spacesWithControlAccess = [];
 
-		for (const spaceId of allSubspaces) {
+		for (const spaceId of permissionSpaces) {
 			const space = await Space.findById(spaceId);
 			if (!space) continue;
 
@@ -136,6 +136,19 @@ router.get("/getSpacesWithAccessControl/:userId", async (req, res) => {
 			}
 		}
 
+		for (const spaceId of allSubspaces) {
+			const space = await Space.findById(spaceId);
+			if (!space) continue;
+
+			const devices = await Device.find({ _id: { $in: space.devices } });
+
+			for (const device of devices) {
+				if (device.type === "controlAcceso") {
+					spacesWithControlAccess.push(space);
+					break; // No need to check other devices in this space
+				}
+			}
+		}
 		res.status(200).json({
 			success: true,
 			message: "Spaces with controlAccess devices retrieved successfully",

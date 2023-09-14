@@ -4,6 +4,7 @@ import Space from "../models/Space.js";
 import mongoose from "mongoose";
 import mqtt from "mqtt";
 import dotenv from "dotenv";
+import AccessControlSpace from "../models/AccessControlSpace.js";
 dotenv.config();
 
 const router = express.Router();
@@ -32,6 +33,8 @@ router.post("/createDevice", async (req, res) => {
 		// Create the new device and add it to the associated space
 		const device = new Device(deviceData);
 
+		const savedDevice = await device.save();
+
 		if (device.type == "aire" || device.type == "luz") {
 			client.publish(
 				"Topico extra",
@@ -48,6 +51,13 @@ router.post("/createDevice", async (req, res) => {
 		}
 
 		if (device.type == "controlAcceso") {
+			const spaceAccessControl = new AccessControlSpace({
+				topic: device.topic,
+				deviceId: savedDevice._id,
+			});
+
+			spaceAccessControl.save();
+
 			client.publish("Topico extra", device.topic + " / Permiso", (err) => {
 				if (err) {
 					console.error("Error publishing message:", err);
@@ -81,8 +91,6 @@ router.post("/createDevice", async (req, res) => {
 				}
 			});
 		}
-
-		const savedDevice = await device.save();
 
 		const historyEntry = {
 			updatedBy: userName,

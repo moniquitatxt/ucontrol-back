@@ -22,10 +22,8 @@ const influxDB = new InfluxDB({ url, token });
 client.on("connect", () => {
 	console.log("Conectado al broker");
 
-	client.subscribe("Control de acceso");
 	client.subscribe("Nuevo Dispositivo");
 	client.subscribe("Topico extra");
-	client.subscribe("Pato / Bombillo");
 
 	(async () => {
 		try {

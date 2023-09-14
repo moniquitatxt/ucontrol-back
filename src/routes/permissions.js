@@ -159,7 +159,7 @@ router.get("/getUserPermissions/:userId", async (req, res) => {
 		})
 			.populate({
 				path: "userId",
-				select: "email", // Select only the user's email
+				select: "name email _id", // Select name, email, and _id
 				model: User,
 			})
 			.populate({
@@ -172,11 +172,12 @@ router.get("/getUserPermissions/:userId", async (req, res) => {
 		// Step 3: Construct the desired data structure
 		const formattedPermissions = permissions.map((permission) => ({
 			id: permission._id,
+			userId: permission.userId._id, // Add userId
+			userName: permission.userId.name, // Add userName
 			userEmail: permission.userId.email,
 			spaceName: permission.spaceId.name,
 			type: permission.permission,
 		}));
-
 		// Step 4: Return the formatted permissions in the route
 		res.status(200).json({
 			success: true,

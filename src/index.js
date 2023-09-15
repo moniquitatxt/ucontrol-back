@@ -11,6 +11,7 @@ import accessControlRoute from "./routes/accessControlSpace.js";
 import queriesRoute from "./influxdb/queries.js";
 import client from "./broker.js";
 import control from "./mqtt/accessControl.js";
+import instructionsRoute from "./routes/instructions.js";
 
 const PORT = process.env.PORT || 9000;
 const app = express();
@@ -26,6 +27,7 @@ app.use("/api", spaceRoute);
 app.use("/api", permissionRoute);
 app.use("/api", queriesRoute);
 app.use("/api", accessControlRoute);
+app.use("/api", instructionsRoute);
 
 app.listen(PORT, () => {
 	console.log(`Servidor en el puerto: ${PORT}`);

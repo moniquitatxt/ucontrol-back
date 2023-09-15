@@ -30,10 +30,6 @@ DeviceSchema.statics.getAllTopics = async function () {
 		const devices = await this.find({});
 		const topics = [];
 		devices.map((device) => {
-			if (device.type == "aire" || device.type == "luz") {
-				topics.push(device.topic + " / Switch");
-			}
-
 			if (device.type == "tempHum") {
 				topics.push(device.topic + " / Temperatura");
 				topics.push(device.topic + " / Humedad");

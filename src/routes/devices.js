@@ -283,6 +283,12 @@ router.delete("/deleteDevice", async (req, res) => {
 				.status(404)
 				.json({ success: false, message: "Dispositivo no encontrado" });
 		}
+		if (device.type === "controlAcceso") {
+			const deviceId = id;
+			const accessControlSpace = await AccessControlSpace.findOneAndDelete({
+				deviceId,
+			});
+		}
 
 		// Find all spaces that have the device ID in their devices array
 		const spacesToUpdate = await Space.find({ devices: device._id });

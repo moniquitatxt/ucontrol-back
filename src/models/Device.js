@@ -11,6 +11,7 @@ const ConditionSchema = new mongoose.Schema({
 	listenerDevice: { type: String, required: true },
 	condition: { type: String, required: true },
 	conditionValue: { type: String },
+	instruction: { type: String },
 });
 
 const DeviceSchema = new mongoose.Schema({

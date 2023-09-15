@@ -30,19 +30,13 @@ client.on("connect", () => {
 			const topics = await Device.getAllTopics();
 			// Subscribe to all topics retrieved from the database
 			topics.forEach((topic) => {
-				if (
-					topic ==
-					"Escuela de Ingeniería Civil / Oficina Profe Yolanda / Control de acceso a la oficina"
-				) {
-					console.log("ignorado con exito");
-				} else
-					client.subscribe(topic, (error) => {
-						if (error) {
-							console.error(`Error al suscribirse al tópico ${topic}:`, error);
-						} else {
-							console.log(`Suscrito con éxito a ${topic}`);
-						}
-					});
+				client.subscribe(topic, (error) => {
+					if (error) {
+						console.error(`Error al suscribirse al tópico ${topic}:`, error);
+					} else {
+						console.log(`Suscrito con éxito a ${topic}`);
+					}
+				});
 			});
 		} catch (error) {
 			console.error("Error al obtener tópicos", error);

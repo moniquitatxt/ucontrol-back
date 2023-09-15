@@ -252,8 +252,6 @@ router.get("/getUserPermissions/:userId", async (req, res) => {
 
 		permissions.map((permission) => {
 			if (permission.userId._id.toString() !== userId) {
-				console.log(permission.userId._id.toString());
-				console.log(userId);
 				formattedPermissions.push({
 					id: permission._id,
 					userId: permission.userId._id, // Add userId

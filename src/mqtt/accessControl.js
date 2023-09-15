@@ -58,6 +58,14 @@ control.on("message", async (topic, message) => {
 				qos: 1,
 			});
 
+			const newUserHistory = {
+				userId: accessControlUser._id,
+				entered: new Date(),
+				state: "Acceso denegado",
+			};
+			accessControlSpace.userHistory.push(newUserHistory);
+
+			await accessControlSpace.save();
 			throw new Error("El usuario no tiene acceso a este espacio");
 		}
 		// Get today's date without the time (just the date)
@@ -81,6 +89,7 @@ control.on("message", async (topic, message) => {
 				userId: accessControlUser._id,
 				entered: new Date(),
 				status: true, // User is entering
+				state: "Acceso concedido",
 			};
 			accessControlSpace.userHistory.push(newUserHistory);
 		} else {
@@ -96,7 +105,7 @@ control.on("message", async (topic, message) => {
 			}
 		}
 
-		await accessControlSpace.save(); //
+		await accessControlSpace.save();
 		control.publish(topic + " / Permiso", "Acceso concedido", { qos: 1 });
 
 		console.log(accessControlUser);

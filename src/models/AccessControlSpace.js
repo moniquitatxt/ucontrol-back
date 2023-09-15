@@ -10,6 +10,7 @@ const UserHistorySchema = new mongoose.Schema({
 	entered: [{ type: Date, required: true }],
 	gotOut: [{ type: Date }],
 	status: { type: Boolean, default: false },
+	state: { type: String },
 });
 const AccessControlSpaceSchema = new mongoose.Schema({
 	allowedUsers: [

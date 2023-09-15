@@ -28,11 +28,6 @@ const AccessControlUserSchema = new mongoose.Schema({
 		required: true,
 		unique: true,
 	},
-	access: [
-		{
-			type: String,
-		},
-	],
 });
 
 const AccessControlUser = mongoose.model(

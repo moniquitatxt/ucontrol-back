@@ -44,6 +44,109 @@ router.post("/createAccessControlUser", async (req, res) => {
 	}
 });
 
+router.get("/getAccessControlSpaceUsers/:deviceId", async (req, res) => {
+	const { deviceId } = req.params;
+
+	try {
+		// Find the AccessControlSpace with the given deviceId
+		const accessControlSpace = await AccessControlSpace.findOne({ deviceId });
+
+		if (!accessControlSpace) {
+			return res.status(404).json({
+				success: false,
+				message: "AccessControlSpace not found for the specified deviceId.",
+			});
+		}
+
+		// Get the userHistory for the found AccessControlSpace
+		const userHistory = accessControlSpace.userHistory;
+
+		// Filter userHistory entries for today's date and status=true
+		const currentDate = new Date().toDateString();
+		const currentUsers = userHistory.filter(
+			(entry) =>
+				entry.entered[0]?.toDateString() === currentDate &&
+				entry.status === true
+		);
+
+		// Get the list of user IDs from the filtered entries
+		const userIds = currentUsers.map((entry) => entry.userId);
+
+		// Fetch user details for the identified user IDs
+		const users = await AccessControlUser.find({ _id: { $in: userIds } });
+
+		// Create an array of objects with user information
+		const userData = users.map((user) => ({
+			userId: user._id,
+			userName: user.name,
+			userEmail: user.email,
+			userCareer: user.career,
+			userCi: user.ci,
+			userECard: user.eCard,
+		}));
+
+		res.status(200).json({
+			success: true,
+			message:
+				"Users currently inside AccessControlSpace retrieved successfully",
+			data: userData,
+		});
+	} catch (error) {
+		res.status(500).json({ success: false, message: error.message });
+	}
+});
+
+router.get("/getAccessControlSpaceUserHistory/:deviceId", async (req, res) => {
+	const { deviceId } = req.params;
+
+	try {
+		// Find the AccessControlSpace with the given deviceId
+		const accessControlSpace = await AccessControlSpace.findOne({ deviceId });
+
+		if (!accessControlSpace) {
+			return res.status(404).json({
+				success: false,
+				message: "AccessControlSpace not found for the specified deviceId.",
+			});
+		}
+
+		// Get the userHistory for the found AccessControlSpace
+		const userHistory = accessControlSpace.userHistory;
+
+		// Sort userHistory by entry time in ascending order
+		userHistory.sort((a, b) => a.entered - b.entered);
+
+		// Create an array of objects with user information and entry/exit times
+		const userHistoryData = [];
+		for (const historyEntry of userHistory) {
+			const userId = historyEntry.userId;
+			const user = await AccessControlUser.findById(userId);
+
+			if (user) {
+				userHistoryData.push({
+					state: historyEntry.state,
+					entered: historyEntry.entered,
+					gotOut: historyEntry.gotOut,
+					userId: user._id,
+					name: user.name,
+					email: user.email,
+					career: user.career,
+					ci: user.ci,
+					eCard: user.eCard,
+				});
+			}
+		}
+
+		res.status(200).json({
+			success: true,
+			message: "AccessControlSpace user history retrieved successfully",
+			data: userHistoryData,
+		});
+	} catch (error) {
+		res.status(500).json({ success: false, message: error.message });
+	}
+});
+
 router.get("/getAccessControlSpace/:deviceId", async (req, res) => {
 	try {
 		const { deviceId } = req.params;

@@ -9,8 +9,10 @@ const HistorySchema = new mongoose.Schema({
 
 const ConditionSchema = new mongoose.Schema({
 	listenerDevice: { type: String, required: true },
+	secondTopic: { type: String },
 	condition: { type: String, required: true },
 	conditionValue: { type: String },
+	secondConditionValue: { type: String },
 	instruction: { type: String },
 });
 

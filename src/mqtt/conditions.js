@@ -68,19 +68,35 @@ conditions.on("message", async (topic, message) => {
 			"conditions.listenerDevice": topic,
 		});
 
-		if (!device) {
+		const secondDevice = await Device.findOne({
+			"conditions.secondTopic": topic,
+		});
+
+		if (!device && !secondDevice) {
 			console.log("No hay dispositivos escuchando este topico: " + topic);
 			return;
 		}
 
 		const mensaje = message.toString();
 		const valor = parseFloat(mensaje);
-		const valorCondicion = parseFloat(device.conditions.conditionValue);
+		let valorCondicion = "";
+		if (device) {
+			valorCondicion = parseFloat(device.conditions.conditionValue);
 
-		if (checkCondition(valor, device.conditions.condition, valorCondicion)) {
-			performAction(device.topic, device.conditions.instruction);
+			if (checkCondition(valor, device.conditions.condition, valorCondicion)) {
+				performAction(device.topic, device.conditions.instruction);
+			} else {
+				console.log("La condición no se cumple");
+			}
 		} else {
-			console.log("La condición no se cumple");
+			valorCondicion = parseFloat(secondDevice.conditions.secondConditionValue);
+			if (
+				checkCondition(valor, secondDevice.conditions.condition, valorCondicion)
+			) {
+				performAction(secondDevice.topic, secondDevice.conditions.instruction);
+			} else {
+				console.log("La condición no se cumple");
+			}
 		}
 	} catch (error) {
 		console.error("Error processing message:", error);

@@ -13,6 +13,10 @@ const UserHistorySchema = new mongoose.Schema({
 	state: { type: String },
 });
 const AccessControlSpaceSchema = new mongoose.Schema({
+	name: { type: String, required: true },
+	description: { type: String, required: true },
+	createdBy: { type: String, required: true },
+	createdOn: { type: Date },
 	allowedUsers: [
 		{ type: mongoose.Schema.Types.ObjectId, ref: "AccessControlUser" },
 	],

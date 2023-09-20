@@ -52,19 +52,15 @@ router.post("/createDevice", async (req, res) => {
 
 		if (device.type == "controlAcceso") {
 			const spaceAccessControl = new AccessControlSpace({
+				name: device.name,
+				description: device.description,
+				createdBy: device.createdBy,
+				createdOn: device.createdOn,
 				topic: device.topic,
 				deviceId: savedDevice._id,
 			});
 
 			spaceAccessControl.save();
-
-			client.publish("Topico extra", device.topic + " / Permiso", (err) => {
-				if (err) {
-					console.error("Error publishing message:", err);
-				} else {
-					console.log("Mensaje enviado");
-				}
-			});
 		}
 
 		if (device.type == "tempHum") {

@@ -1,7 +1,6 @@
 #include <Wire.h>
 #include "DHT.h"
-#include <InfluxDbClient.h>
-#include <InfluxDbCloud.h>
+#include <PubSubClient.h>
 
 #if defined(ESP8266)
 #include <ESP8266WiFiMulti.h>
@@ -13,30 +12,40 @@ ESP8266WiFiMulti wifiMulti;
 uint8_t DHTPin = 14;   // D5 pin on nodeMCU board, GPIO pin 14 - connected DATA from AM2301_sensor
 
 DHT dht(DHTPin, DHTTYPE);
-// wifi
+
+//wifi
 const char* ssid = "luisa";
 const char* password = "123luisa";
 
-#define INFLUXDB_URL "http://172.29.91.241:8086"
-#define INFLUXDB_TOKEN "oaz4hK-TQdb-5nBCuXs6zQCVa1uAn_QgIAeztBFJOWDx5rJVZ69zXKSU4ova8ShYRNNSf3QJShnsx5aVIcDI3Q=="
-#define INFLUXDB_ORG "1bbe5f3a949fb99b"
-#define INFLUXDB_BUCKET "ucontrol-arm21"
-
+//MQTT Server
+const char* mqtt_server = "192.168.152.71";
+const char* mqtt_username = "ucontrol";
+const char* mqtt_password = "Ucontrol123";
+const int mqtt_port = 1884;
 // Time zone info
 #define TZ_INFO "UTC+4"
+const String TOPIC ="Escuela de Ingeniería Civil / Laboratorio de ingenieria sanitaria / Temperatura y humedad del laboratorio";
 
-// Declare InfluxDB client instance with preconfigured InfluxCloud certificate
-InfluxDBClient influxClient(INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLUXDB_TOKEN, InfluxDbCloud2CACert);
+const String TOPIC_TEMPERATURE = TOPIC+" / Temperatura";
 
-const String AM2301_TOPIC = "Escuela de Ingeniería Civil / Oficina Profe Yolanda / Temperatura y humedad de la oficina";
 
-// Declare Data point
-Point AM2301_sensor(AM2301_TOPIC);
+const String TOPIC_HUMIDITY = TOPIC +" / Humedad";
+
 
 float hum;   //Stores humidity value
 float temp;  //Stores temperature value
 
+unsigned long lastMsg = 0;
+#define MSG_BUFFER_SIZE (50)
+char msg[MSG_BUFFER_SIZE];
+int value = 0;
 
+
+/**** Secure WiFi Connectivity Initialisation *****/
+WiFiClient espClient;
+
+/**** MQTT Client Initialisation Using WiFi Connection *****/
+PubSubClient client(espClient);
 
 /************* Connect to WiFi ***********/
 void setup_wifi() {
@@ -60,60 +69,49 @@ void setup_wifi() {
   Serial.println(WiFi.localIP());
 }
 
+/************* Connect to MQTT Broker ***********/
+void reconnect() {
+  while (!client.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    if (client.connect(TOPIC.c_str(), mqtt_username, mqtt_password)) {
+      Serial.println("connected");
+      client.subscribe(TOPIC_TEMPERATURE.c_str());
+      client.subscribe(TOPIC_HUMIDITY.c_str());
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      delay(5000);
+    }
+  }
+}
 
 void setup() {
   Serial.begin(9600);
   setup_wifi();
-  // Accurate time is necessary for certificate validation and writing in batches
-  // We use the NTP servers in your area as provided by: https://www.pool.ntp.org/zone/
-  // Syncing progress and the time will be printed to Serial.
-  delay(500);
-  timeSync(TZ_INFO, "pool.ntp.org", "time.nis.gov");
 
-  if (influxClient.validateConnection()) {
-    Serial.print("Connected to InfluxDB: ");
-    Serial.println(influxClient.getServerUrl());
-    AM2301_sensor.addTag("deviceType", "tempHum");
-    pinMode(DHTPin, INPUT);
-    dht.begin();
-  } else {
-    Serial.print("InfluxDB connection failed: ");
-    Serial.println(influxClient.getLastErrorMessage());
-  }
+  client.setServer(mqtt_server, mqtt_port);
+  dht.begin();
 }
 
 void loop() {
-  // Clear fields for reusing the point. Tags will remain the same as set above.
-  if (influxClient.validateConnection()) {
-    AM2301_sensor.clearFields();
 
-
-    //Read data and store it to variables hum and temp
-    hum = dht.readHumidity();
-    temp = dht.readTemperature();
-
-    // Store measured value into point
-    AM2301_sensor.addField("temperature", temp);
-    AM2301_sensor.addField("humidity", hum);
-
-    // Print what are we exactly writing
-    Serial.print("Writing: ");
-    Serial.println(AM2301_sensor.toLineProtocol());
-    // Check WiFi connection and reconnect if needed
-    if (wifiMulti.run() != WL_CONNECTED) {
-      Serial.println("Wifi connection lost");
-    }
-
-    // Write point
-    if (!influxClient.writePoint(AM2301_sensor)) {
-      Serial.print("InfluxDB write failed: ");
-      Serial.println(influxClient.getLastErrorMessage());
-    }
-
-  } else {
-    Serial.print("InfluxDB connection failed: ");
-    Serial.println(influxClient.getLastErrorMessage());
+  if (!client.connected()) {
+    reconnect();
   }
+  client.loop();
+  //Read data and store it to variables hum and temp
+  hum = dht.readHumidity();
+  temp = dht.readTemperature();
 
+  Serial.println(temp);
+  Serial.println(hum);
+
+  unsigned long now = millis();
+  if (now - lastMsg > 2000) {
+    lastMsg = now;
+    client.publish(TOPIC_TEMPERATURE.c_str(), String(temp).c_str());
+    client.publish(TOPIC_HUMIDITY.c_str(), String(hum).c_str());
+  }
   delay(30000);
 }

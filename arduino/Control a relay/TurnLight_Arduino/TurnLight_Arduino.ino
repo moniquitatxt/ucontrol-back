@@ -2,10 +2,6 @@
 
 
 int relayPin = 3;
-int temt6000Pin = A0;
-float light;
-int light_value;
-float volt;
 
 SoftwareSerial Arduino_SoftSerial(10, 11);
 
@@ -30,13 +26,13 @@ void ReceiveData() {
 
   if (c == '\n') {
     Serial.println(dataFromNodeMCU);
-    if (dataFromNodeMCU.equals("1")) {
+    if (dataFromNodeMCU.indexOf("1")>=0) {
       str = String("1");
       digitalWrite(relayPin, HIGH);
       String espStr = str + String('\n');
       Arduino_SoftSerial.print(espStr);
 
-    } else if (dataFromNodeMCU.equals("0")) {
+    } else if (dataFromNodeMCU.indexOf("0")>=0) {
       str = String("0");
       digitalWrite(relayPin, LOW);
       String espStr = str + String('\n');
@@ -58,12 +54,6 @@ void setup() {
 }
 
 void loop() {
-  int light_value = analogRead(temt6000Pin);
-  light = light_value * 0.0976;  // percentage calculation
-
-  //volt conversion
-  int mVolt = map(light_value, 0, 1023, 0, 5000);
-  volt = (double)mVolt / 1000;
 
   if (digitalRead(relayPin) == 1) {
     str = String("1");

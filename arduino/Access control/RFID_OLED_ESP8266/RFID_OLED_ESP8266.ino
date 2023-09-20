@@ -21,19 +21,36 @@ D8 pin is SS_PIN
 #define SCREEN_ADDRESS 0x3C
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-//wifi
-const char* ssid = "ABACANTVWIFI5B5F";
-const char* password = "85047929266670";
+
+// //wifi
+// const char* ssid = "luisa";
+// const char* password = "123luisa";
+
+// //MQTT Server
+// const char* mqtt_server = "172.29.91.241";
+// const char* mqtt_clientid = "pato";
+// const char* mqtt_username = "ucontrol";
+// const char* mqtt_password = "Ucontrol123";
+// const int mqtt_port = 1884;
+
+const char* ssid = "Cleopatra";
+const char* password = "11990587";
+
+// //MQTT Server
+// const char* mqtt_server = "25.58.78.34";
+// const char* mqtt_username = "ucontrol";
+// const char* mqtt_password = "Ucontrol123";
+// const int mqtt_port = 1884;
+
 
 //MQTT Server
-const char* mqtt_server = "192.168.250.6";
-const char* mqtt_clientid = "pato";
+const char* mqtt_server = "192.168.0.107";
 const char* mqtt_username = "ucontrol";
 const char* mqtt_password = "Ucontrol123";
 const int mqtt_port = 1884;
 
-const String TOPIC = "Escuela de Ingeniería Civil / Oficina Profe Yolanda / Acceso";
-const String ACTION = "Escuela de Ingeniería Civil / Oficina Profe Yolanda / Acceso / PERMISSION";
+const String TOPIC = "Escuela de Ingeniería Civil / Oficina Profe Yolanda / Control de acceso a la oficina";
+const String ACTION = TOPIC + " / Permiso";
 
 /**** Secure WiFi Connectivity Initialisation *****/
 WiFiClient espClient;
@@ -86,22 +103,13 @@ void callback(char* topic, byte* payload, unsigned int length) {
   //const char* topicName = strcat(TOPIC.c_str(),"SwitchControlESP");
   if (strcmp(topic, ACTION.c_str()) == 0) {
 
-    if (incommingMessage.equals("1")) {
-      Serial.println("From broker: Access granted");
+      Serial.println(incommingMessage);
       display.setTextColor(WHITE);
       display.setCursor(0, 30);
-      display.println("Access granted");
+      display.println(incommingMessage);
       display.display();
       display.clearDisplay();
-
-    } else if (incommingMessage.equals("0")) {
-      Serial.println("From broker: No access granted");
-      display.setTextColor(WHITE);
-      display.setCursor(0, 30);
-      display.println("No access granted");
-      display.display();
-      display.clearDisplay();
-    }
+    
   } else {
     Serial.println("Nothing");
   }

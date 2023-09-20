@@ -13,15 +13,23 @@ ESP8266WiFiMulti wifiMulti;
 // wifi
 const char* ssid = "luisa";
 const char* password = "123luisa";
+// const char* ssid = "Cleopatra";
+// const char* password = "11990587";
+
+// //MQTT Server
+// const char* mqtt_server = "25.58.78.34";
+// const char* mqtt_username = "ucontrol";
+// const char* mqtt_password = "Ucontrol123";
+// const int mqtt_port = 1884;
 
 
 //MQTT Server
-const char* mqtt_server = "25.58.78.34";
+const char* mqtt_server = "192.168.152.71";
 const char* mqtt_username = "ucontrol";
 const char* mqtt_password = "Ucontrol123";
 const int mqtt_port = 1884;
 
-const String HW_TOPIC = "Escuela de Ingeniería Civil / Oficina Profe Yolanda / Sensor de macetas";
+const String HW_TOPIC = "Escuela de Ingeniería Civil / Laboratorio de ingenieria sanitaria / Sensor de tierra";
 
 /**** Secure WiFi Connectivity Initialisation *****/
 WiFiClient espClient;
@@ -35,8 +43,8 @@ char msg[MSG_BUFFER_SIZE];
 int value = 0;
 
 
-const int AirValue = 950;
-const int WaterValue = 450;
+const int AirValue = 850;
+const int WaterValue = 20;
 int intervals = (AirValue - WaterValue) / 3;
 const int SensorPin = A0;
 int soilMoistureValue = 0;
@@ -72,7 +80,7 @@ void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
 
-    if (client.connect("HW390_ESP", mqtt_username, mqtt_password)) {
+    if (client.connect(HW_TOPIC.c_str(), mqtt_username, mqtt_password)) {
       Serial.println("connected");
       client.subscribe(HW_TOPIC.c_str());
     } else {
@@ -90,51 +98,29 @@ void setup() {
 
   setup_wifi();
 
-  client.setServer(mqtt_server, mqtt_port);
-  client.setCallback(callback);
-  delay(500);
-  timeSync(TZ_INFO, "pool.ntp.org", "time.nis.gov");
+  client.setServer(mqtt_server, mqtt_port); 
 
 }
 
 
 void loop() {
 
- 
+ if (!client.connected()) {
+    reconnect();
+  }
+  client.loop();
     //Read data and store it
     soilMoistureValue = analogRead(SensorPin);  //put Sensor insert into soil
     soilmoisturepercent = map(soilMoistureValue, AirValue, WaterValue, 0, 100);
     Serial.println(soilmoisturepercent);
 
 
-    if (!client.connected()) {
-      reconnect();
-    }
-    client.loop();
-
-
     //Broker
     unsigned long now = millis();
     if (now - lastMsg > 2000) {
       lastMsg = now;
-
-    if (soilMoistureValue < WaterValue) {
-
-       client.publish(HW_TOPIC.c_str(), "Inundación");
-
-    } else if (soilMoistureValue >= WaterValue && soilMoistureValue < AirValue) {
-
-        client.publish(HW_TOPIC.c_str(), "Normal");
-    } else {
-
-        client.publish(HW_TOPIC.c_str(), "Seca");
+       client.publish(HW_TOPIC.c_str(), String(soilmoisturepercent).c_str());
+       Serial.println("enviado");
     }
-     }
-
-
-  
-
-
-
   delay(30000);
 }

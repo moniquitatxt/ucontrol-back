@@ -7,15 +7,31 @@
 const char* ssid = "luisa";
 const char* password = "123luisa";
 
+// //MQTT Server
+// const char* mqtt_server = "172.29.91.241";
+// const char* mqtt_clientid = "pato";
+// const char* mqtt_username = "ucontrol";
+// const char* mqtt_password = "Ucontrol123";
+// const int mqtt_port = 1884;
+
+// const char* ssid = "Cleopatra";
+// const char* password = "11990587";
+
+// //MQTT Server
+// const char* mqtt_server = "25.58.78.34";
+// const char* mqtt_username = "ucontrol";
+// const char* mqtt_password = "Ucontrol123";
+// const int mqtt_port = 1884;
+
+
 //MQTT Server
-const char* mqtt_server = "172.29.91.241";
-const char* mqtt_clientid = "pato";
+const char* mqtt_server = "192.168.152.71";
 const char* mqtt_username = "ucontrol";
 const char* mqtt_password = "Ucontrol123";
 const int mqtt_port = 1884;
 
-const String TOPIC = "Escuela de Ingeniería Civil / Oficina Profe Yolanda / Bombillo de la oficina";
-const String ACTION = "Escuela de Ingeniería Civil / Oficina Profe Yolanda / Bombillo de la oficina / Switch";
+const String TOPIC = "Escuela de Ingeniería Civil / Laboratorio de ingenieria sanitaria / Luces del laboratorio";
+const String ACTION = TOPIC+" / Switch";
 
 /**** Secure WiFi Connectivity Initialisation *****/
 WiFiClient espClient;
@@ -89,7 +105,7 @@ void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
 
-    if (client.connect("SwitchControlESP", mqtt_username, mqtt_password)) {
+    if (client.connect(TOPIC.c_str(), mqtt_username, mqtt_password)) {
       Serial.println("connected");
       client.subscribe(TOPIC.c_str());
 

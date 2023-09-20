@@ -32,7 +32,7 @@ const char* mqtt_username = "ucontrol";
 const char* mqtt_password = "Ucontrol123";
 const int mqtt_port = 1884;
 
-const String TOPIC = "Escuela de Ingeniería Civil / Oficina Profe Yolanda / Sensor de agua";
+const String WATER_TOPIC = "Escuela de Ingeniería Civil / Oficina Profe Yolanda / Sensor de agua";
 
 #define INFLUXDB_URL "http://172.29.91.241:8086"
 #define INFLUXDB_TOKEN "oaz4hK-TQdb-5nBCuXs6zQCVa1uAn_QgIAeztBFJOWDx5rJVZ69zXKSU4ova8ShYRNNSf3QJShnsx5aVIcDI3Q=="
@@ -49,7 +49,7 @@ InfluxDBClient influxClient(INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLUXD
 
 
 // Declare Data point
-Point relayControl(TOPIC);
+Point relayControl(WATER_TOPIC);
 
 /**** Secure WiFi Connectivity Initialisation *****/
 WiFiClient espClient;
@@ -60,11 +60,8 @@ PubSubClient client(espClient);
 unsigned long lastMsg = 0;
 #define MSG_BUFFER_SIZE (50)
 char msg[MSG_BUFFER_SIZE];
-int value = 0;
+int waterValue = 0;
 
-
-// Value for storing water level
-int val = 0;
 const int WATERPIN = A0;
 
 void setup_wifi() {
@@ -94,9 +91,9 @@ void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
 
-    if (client.connect(TOPIC.c_str(), mqtt_username, mqtt_password)) {
+    if (client.connect(WATER_TOPIC.c_str(), mqtt_username, mqtt_password)) {
       Serial.println("connected");
-      client.subscribe(TOPIC.c_str());
+      client.subscribe(WATER_TOPIC.c_str());
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -129,8 +126,8 @@ void setup() {
 
 void loop() {
 
-  value = analogRead(WATERPIN);  //put Sensor insert into soil
-  Serial.println(value);
+  waterValue = analogRead(WATERPIN);  //put Sensor insert into soil
+  Serial.println(waterValue);
 
 
   if (!client.connected()) {
@@ -144,13 +141,13 @@ void loop() {
   if (now - lastMsg > 2000) {
     lastMsg = now;
 
-    if (value > 200) {
+    if (waterValue > 200) {
 
-      client.publish(TOPIC.c_str(), "1");
+      client.publish(WATER_TOPIC.c_str(), "1");
 
     } else {
 
-      client.publish(TOPIC.c_str(), "0");
+      client.publish(WATER_TOPIC.c_str(), "0");
     }
   }
   delay(30000);

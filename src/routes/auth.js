@@ -79,7 +79,39 @@ router.post("/sendCode", (req, res) => {
 			from: "ucontrol.iotsystem@gmail.com",
 			to: email,
 			subject: "Código PIN de 6 dígitos",
-			text: `Tu código PIN es: ${pin}`,
+			html: `
+			  <html>
+				<head>
+				  <style>
+					/* Add your CSS styles here */
+					body {
+					  font-family: Arial, sans-serif;
+					  background-color: #f4f4f4;
+					}
+					.container {
+					  max-width: 600px;
+					  margin: 0 auto;
+					  padding: 20px;
+					  background-color: #ffffff;
+					}
+					.code {
+					  font-size: 24px;
+					  font-weight: bold;
+					  color: #007bff;
+					}
+				  </style>
+				</head>
+				<body>
+				  <div class="container">
+					<h2>Código PIN de 6 dígitos</h2>
+					<p>Hola ${user.name},</p>
+					<p>¡Tu código PIN es:</p>
+					<p class="code">${pin}</p>
+					<p>Este código es necesario para crear tu contraseña y acceder al sistema de inmótica UControl.</p>
+				  </div>
+				</body>
+			  </html>
+			`,
 		};
 
 		// Enviar el mensaje de correo electrónico
@@ -90,6 +122,41 @@ router.post("/sendCode", (req, res) => {
 			code: pin,
 		});
 	});
+});
+
+// Route to change the password
+router.patch("/changePassword", async (req, res) => {
+	const { userId, oldPassword, newPassword } = req.body;
+
+	try {
+		// Find the user by their email
+		const user = await User.findById(userId);
+
+		if (!user) {
+			return res.status(404).json({ message: "User not found" });
+		}
+
+		// Check if the old password matches the stored hashed password
+		const passwordMatch = await bcrypt.compare(oldPassword, user.password);
+
+		if (!passwordMatch) {
+			return res.status(401).json({ message: "Invalid old password" });
+		}
+
+		// Hash the new password
+		const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+		// Update the user's password
+		user.password = hashedPassword;
+
+		// Save the updated user document
+		await user.save();
+
+		return res.status(200).json({ message: "Password changed successfully" });
+	} catch (error) {
+		console.error("Error changing password:", error);
+		return res.status(500).json({ message: "Internal server error" });
+	}
 });
 
 router.put("/firstTimeRegister", (req, res) => {

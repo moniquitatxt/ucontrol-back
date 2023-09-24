@@ -77,7 +77,32 @@ router.post("/permission", async (req, res) => {
 			from: "ucontrol.iotsystem@gmail.com",
 			to: email,
 			subject: "Invitación a espacio",
-			text: `Hola! Usted ha sido autorizado para acceder al espacio en el sistema de inmótica UControl`,
+			html: `
+			  <html>
+				<head>
+				  <style>
+					/* Add your CSS styles here */
+					body {
+					  font-family: Arial, sans-serif;
+					  background-color: #f4f4f4;
+					}
+					.container {
+					  max-width: 600px;
+					  margin: 0 auto;
+					  padding: 20px;
+					  background-color: #ffffff;
+					}
+				  </style>
+				</head>
+				<body>
+				<div class="container">
+				<h2>Hola ${user.name},</h2>
+				<p>Usted ha sido autorizado para acceder al espacio "${space.name}" en el sistema de inmótica UControl.</p>
+				<!-- Add more content here -->
+			  </div>
+				</body>
+			  </html>
+			`,
 		};
 
 		const info = await transporter.sendMail(mailOptions);

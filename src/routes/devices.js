@@ -2,6 +2,7 @@ import express from "express";
 import Device from "../models/Device.js";
 import Space from "../models/Space.js";
 import mongoose from "mongoose";
+import nodemailer from "nodemailer";
 import mqtt from "mqtt";
 import dotenv from "dotenv";
 import AccessControlSpace from "../models/AccessControlSpace.js";
@@ -32,6 +33,54 @@ router.post("/createDevice", async (req, res) => {
 
 		// Create the new device and add it to the associated space
 		const device = new Device(deviceData);
+
+		if (device.createdBy !== space.createdBy) {
+			const spaceCreator = await User.findById(space.createdBy);
+
+			if (spaceCreator) {
+				// Send an email to the space creator
+				const transporter = nodemailer.createTransport({
+					service: "Gmail",
+					auth: {
+						user: "ucontrol.iotsystem@gmail.com",
+						pass: "jhszraxaqmsmrdpl",
+					},
+				});
+
+				const mailOptions = {
+					from: "ucontrol.iotsystem@gmail.com",
+					to: spaceCreator.email, // Correo del creador del espacio
+					subject: "Nuevo dispositivo creado",
+					html: `
+						<html>
+							<head>
+								<style>
+									body {
+										font-family: Arial, sans-serif;
+										background-color: #f4f4f4;
+									}
+									.container {
+										max-width: 600px;
+										margin: 0 auto;
+										padding: 20px;
+										background-color: #ffffff;
+									}
+								</style>
+							</head>
+							<body>
+								<div class="container">
+									<h2>Hola ${spaceCreator.name},</h2>
+									<p>${userName} ha creado un nuevo dispositivo ${device.name} en tu espacio ${space.name}.</p>
+									<!-- Add more content here -->
+								</div>
+							</body>
+						</html>
+					`,
+				};
+
+				const info = await transporter.sendMail(mailOptions);
+			}
+		}
 
 		const savedDevice = await device.save();
 

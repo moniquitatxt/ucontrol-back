@@ -61,6 +61,7 @@ control.on("message", async (topic, message) => {
 			const newUserHistory = {
 				userId: accessControlUser._id,
 				entered: new Date(),
+				status: false,
 				state: "Acceso denegado",
 			};
 			accessControlSpace.userHistory.push(newUserHistory);

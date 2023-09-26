@@ -269,4 +269,79 @@ router.get("/getAccessControlUser/:eCard", async (req, res) => {
 	}
 });
 
+router.post("/passCarnet", async (req, res) => {
+	const { topic, message } = req.body;
+
+	const eCard = message.toString().trim();
+	try {
+		const accessControlUser = await AccessControlUser.findOne({ eCard });
+		if (!accessControlUser) {
+			throw new Error("Usuario no existe");
+		}
+
+		const accessControlSpace = await AccessControlSpace.findOne({ topic });
+		if (!accessControlSpace.status) {
+			throw new Error("El espacio esta cerrado");
+		}
+
+		if (!accessControlSpace.allowedUsers.includes(accessControlUser._id)) {
+			const newUserHistory = {
+				userId: accessControlUser._id,
+				entered: new Date(),
+				status: false,
+				state: "Acceso denegado",
+			};
+			accessControlSpace.userHistory.push(newUserHistory);
+
+			await accessControlSpace.save();
+			throw new Error("El usuario no tiene acceso a este espacio");
+		}
+		// Get today's date without the time (just the date)
+		const currentTime = new Date();
+
+		// Find the user's history entry for today
+		const userHistoryToday = accessControlSpace.userHistory.find(
+			(entry) =>
+				entry.userId.toString() === accessControlUser._id.toString() &&
+				entry.entered.some(
+					(openedTime) =>
+						openedTime.getFullYear() === currentTime.getFullYear() &&
+						openedTime.getMonth() === currentTime.getMonth() &&
+						openedTime.getDate() === currentTime.getDate()
+				)
+		);
+
+		if (!userHistoryToday) {
+			// No entry for today, create a new one
+			const newUserHistory = {
+				userId: accessControlUser._id,
+				entered: new Date(),
+				status: true, // User is entering
+				state: "Acceso concedido",
+			};
+			accessControlSpace.userHistory.push(newUserHistory);
+		} else {
+			// Entry for today exists, update status and gotOut accordingly
+			if (userHistoryToday.status === false) {
+				// User is entering
+				userHistoryToday.status = true;
+				userHistoryToday.entered.push(new Date());
+			} else {
+				// User is getting out
+				userHistoryToday.status = false;
+				userHistoryToday.gotOut.push(new Date());
+			}
+		}
+
+		await accessControlSpace.save();
+
+		return res.status(200).json({
+			success: true,
+			message: "Carnet con permiso",
+			data: accessControlUser,
+		});
+	} catch (error) {
+		res.status(500).json({ success: false, message: error.message });
+	}
+});
 export default router;

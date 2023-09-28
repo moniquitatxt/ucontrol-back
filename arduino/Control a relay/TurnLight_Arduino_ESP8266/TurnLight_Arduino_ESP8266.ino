@@ -25,7 +25,7 @@ const char* password = "123luisa";
 
 
 //MQTT Server
-const char* mqtt_server = "192.168.152.71";
+const char* mqtt_server = "192.168.250.6";
 const char* mqtt_username = "ucontrol";
 const char* mqtt_password = "Ucontrol123";
 const int mqtt_port = 1884;
@@ -156,7 +156,7 @@ void loop() {
 
   // To Broker
   if (c == '\n') {
-    
+    Serial.println(dataIn);
     unsigned long now = millis();
     if (now - lastMsg > 2000) {
       lastMsg = now;

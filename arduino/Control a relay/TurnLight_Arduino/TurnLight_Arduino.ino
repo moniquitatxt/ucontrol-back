@@ -48,8 +48,7 @@ void setup() {
 
   Arduino_SoftSerial.begin(115200);
 
-  pinMode(relayPin, OUTPUT);
-  pinMode(temt6000Pin, INPUT);  //data pin for ambientlight sensor
+  pinMode(relayPin, OUTPUT); //data pin for ambientlight sensor
   pinMode(outPin, OUTPUT);
 }
 

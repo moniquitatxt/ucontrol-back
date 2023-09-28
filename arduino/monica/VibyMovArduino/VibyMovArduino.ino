@@ -15,6 +15,14 @@ int buz = 0;
 
 const int PIRPin = 2;
 
+
+const int AirValue = 950;
+const int WaterValue = 20;
+int intervals = (AirValue - WaterValue) / 3;
+const int SensorPin = A4;
+int soilMoistureValue = 0;
+int soilmoisturepercent = 0;
+
 SoftwareSerial Arduino_SoftSerial(10, 11);
 String str;
 char c;
@@ -70,9 +78,21 @@ void setup() {
 
 void loop() {
 
-  ReceiveData();
 
   int PIRvalue = digitalRead(PIRPin);
+
+
+  soilMoistureValue = analogRead(SensorPin);  //put Sensor insert into soil
+  soilmoisturepercent = map(soilMoistureValue, AirValue, WaterValue, 0, 100);
+  Serial.println(soilmoisturepercent);
+  if (soilmoisturepercent > 0) {
+    str = String(soilmoisturepercent);
+    String espStr = str + String('\n');
+    Arduino_SoftSerial.print(espStr);
+    delay(2000);
+    str = "";
+  }
+
 
   int x = analogRead(xpin);  // Leemos el valor de la tensión en el pin x
 
@@ -108,37 +128,38 @@ void loop() {
     str = String("1");
     String espStr = "Vibracion " + str + String('\n');
     Arduino_SoftSerial.print(espStr);
+    delay(2000);
     str = "";
   }
 
-  ReceiveData();
   if (PIRvalue == HIGH) {
     Serial.println("Motion detected!");
     str = String("1");
     String espStr = "Movimiento " + str + String('\n');
     Arduino_SoftSerial.print(espStr);
+    delay(2000);
     str = "";
     delay(5000);
   } else {
     Serial.println("NO Motion detected!");
   }
-  ReceiveData();
   if (digitalRead(relayPin) == 1) {
     str = String("1");
     digitalWrite(relayPin, HIGH);
     String espStr = "Luz " + str + String('\n');
     Arduino_SoftSerial.print(espStr);
+    delay(2000);
     str = "";
   }
-
   else if (digitalRead(relayPin) == 0) {
     str = String("0");
     digitalWrite(relayPin, LOW);
     String espStr = "Luz " + str + String('\n');
     Arduino_SoftSerial.print(espStr);
+    delay(2000);
     str = "";
   }
 
-  delay(30000);
+  delay(900000);
   ReceiveData();
 }

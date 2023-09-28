@@ -23,8 +23,8 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 
 // //wifi
-// const char* ssid = "luisa";
-// const char* password = "123luisa";
+const char* ssid = "luisa";
+const char* password = "123luisa";
 
 // //MQTT Server
 // const char* mqtt_server = "172.29.91.241";
@@ -33,8 +33,8 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 // const char* mqtt_password = "Ucontrol123";
 // const int mqtt_port = 1884;
 
-const char* ssid = "Cleopatra";
-const char* password = "11990587";
+// const char* ssid = "Cleopatra";
+// const char* password = "11990587";
 
 // //MQTT Server
 // const char* mqtt_server = "25.58.78.34";
@@ -44,12 +44,12 @@ const char* password = "11990587";
 
 
 //MQTT Server
-const char* mqtt_server = "192.168.0.107";
+const char* mqtt_server = "192.168.250.6";
 const char* mqtt_username = "ucontrol";
 const char* mqtt_password = "Ucontrol123";
 const int mqtt_port = 1884;
 
-const String TOPIC = "Escuela de Ingeniería Civil / Oficina Profe Yolanda / Control de acceso a la oficina";
+const String TOPIC = "Escuela de Ingeniería Civil / Laboratorio de ingenieria sanitaria / Control de acceso del laboratorio";
 const String ACTION = TOPIC + " / Permiso";
 
 /**** Secure WiFi Connectivity Initialisation *****/

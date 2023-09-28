@@ -7,6 +7,9 @@
 ESP8266WiFiMulti wifiMulti;
 #endif
 
+#include <InfluxDbClient.h>
+#include <InfluxDbCloud.h>
+
 // Uncomment one of the lines below for whatever DHT AM2301_sensor type you're using!
 #define DHTTYPE DHT21  // DHT 21 (AM2301)
 uint8_t DHTPin = 14;   // D5 pin on nodeMCU board, GPIO pin 14 - connected DATA from AM2301_sensor
@@ -33,8 +36,13 @@ const String TOPIC_HUMIDITY = TOPIC + " / Humedad";
 
 
 
-const String WATER_TOPIC = "Escuela de Ingeniería Civil / Oficina Profe Yolanda / Sensor de agua";
+const String WATER_TOPIC = "Escuela de Ingeniería Civil / Laboratorio de ingenieria sanitaria / Sensor de agua";
 
+
+#define INFLUXDB_URL "http://192.168.250.6:8086"
+#define INFLUXDB_TOKEN "6Yp7nch2M53gScyGE3H5RPyAu4F_c5auYRlryIKrDEEeG_YBx5RsKIByPP1NTAgABcoWRibtdWtrmy780mQXHg=="
+#define INFLUXDB_ORG "b1c7cd22c3b5dd1e"
+#define INFLUXDB_BUCKET "ucontrol"
 
 
 float hum;   //Stores humidity value
@@ -48,6 +56,13 @@ char msg[MSG_BUFFER_SIZE];
 int waterValue = 0;
 
 
+
+// Declare InfluxDB client instance with preconfigured InfluxCloud certificate
+InfluxDBClient influxClient(INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLUXDB_TOKEN, InfluxDbCloud2CACert);
+
+Point waterSensor(WATER_TOPIC);
+Point tempSensor(TOPIC_TEMPERATURE);
+Point humSensor(TOPIC_HUMIDITY);
 /**** Secure WiFi Connectivity Initialisation *****/
 WiFiClient espClient;
 
@@ -98,16 +113,19 @@ void setup() {
   Serial.begin(9600);
   setup_wifi();
 
-  client.setServer(mqtt_server, mqtt_port);
+  // client.setServer(mqtt_server, mqtt_port);
   dht.begin();
 }
 
 void loop() {
+  tempSensor.clearFields();
+  humSensor.clearFields();
+  waterSensor.clearFields();
 
-  if (!client.connected()) {
-    reconnect();
-  }
-  client.loop();
+  // if (!client.connected()) {
+  //   reconnect();
+  // }
+  // client.loop();
   //Read data and store it to variables hum and temp
   hum = dht.readHumidity();
   temp = dht.readTemperature();
@@ -117,22 +135,48 @@ void loop() {
   Serial.println(hum);
 
   unsigned long now = millis();
-  if (now - lastMsg > 2000) {
-    lastMsg = now;
-    client.publish(TOPIC_TEMPERATURE.c_str(), String(temp).c_str());
-    client.publish(TOPIC_HUMIDITY.c_str(), String(hum).c_str());
-    if (now - lastMsg > 2000) {
-      lastMsg = now;
+  // if (now - lastMsg > 2000) {
+  //   lastMsg = now;
+  // client.publish(TOPIC_TEMPERATURE.c_str(), String(temp).c_str());
+  // client.publish(TOPIC_HUMIDITY.c_str(), String(hum).c_str());
 
-      if (waterValue > 200) {
-
-        client.publish(WATER_TOPIC.c_str(), "1");
-
-      } else {
-
-        client.publish(WATER_TOPIC.c_str(), "0");
-      }
+  tempSensor.addField("value", String(temp).c_str());
+  humSensor.addField("value", String(hum).c_str());
+  if (waterValue > 200) {
+    waterSensor.addField("value", "1");
+    Serial.println(waterSensor.toLineProtocol());
+    // client.publish(WATER_TOPIC.c_str(), "1");
+    if (!influxClient.writePoint(waterSensor)) {
+      Serial.print("InfluxDB waterSensor write failed: ");
+      Serial.println(influxClient.getLastErrorMessage());
+    }
+  }else{
+     waterSensor.addField("value", "0");
+    Serial.println(waterSensor.toLineProtocol());
+    // client.publish(WATER_TOPIC.c_str(), "0");
+    if (!influxClient.writePoint(waterSensor)) {
+      Serial.print("InfluxDB waterSensor write failed: ");
+      Serial.println(influxClient.getLastErrorMessage());
     }
   }
-  delay(30000);
+  // }
+
+  Serial.print("Writing: ");
+  Serial.println(tempSensor.toLineProtocol());
+  Serial.println(humSensor.toLineProtocol());
+
+  if (wifiMulti.run() != WL_CONNECTED) {
+    Serial.println("Wifi connection lost");
+  }
+
+ 
+  if (!influxClient.writePoint(tempSensor)) {
+    Serial.print("InfluxDB tempSensor write failed: ");
+    Serial.println(influxClient.getLastErrorMessage());
+  }
+  if (!influxClient.writePoint(humSensor)) {
+    Serial.print("InfluxDB humSensor write failed: ");
+    Serial.println(influxClient.getLastErrorMessage());
+  }
+  delay(840000);
 }

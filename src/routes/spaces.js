@@ -54,60 +54,6 @@ router.post("/createSubspace", async (req, res) => {
 	}
 });
 
-// Get all parent spaces
-router.get("/getParentSpaces", async (req, res) => {
-	try {
-		const parentSpaces = await Space.find({ parentSpace: null });
-		res.status(200).json({
-			success: true,
-			message: "Espacios obtenidos exitosamente",
-			data: parentSpaces,
-		});
-	} catch (err) {
-		res.status(500).json({ success: false, message: err.message });
-	}
-});
-
-// Obtener todos los dispositivos de todos los subespacios directos de un espacio padre
-router.get("/getSpaceDevices", async (req, res) => {
-	const { spaceId } = req.body;
-	try {
-		const space = await Space.findById(spaceId);
-		if (!space) {
-			throw new Error("Espacio no encontrado");
-		}
-		const devices = space.devices;
-		for (const subSpaceId of space.subSpaces) {
-			const subSpace = await Space.findById(subSpaceId);
-			if (subSpace) {
-				devices.push(...subSpace.devices);
-			}
-		}
-		res.status(200).json({
-			success: true,
-			message: "Dispositivos obtenidos exitosamente",
-			data: devices,
-		});
-	} catch (err) {
-		res.status(500).json({ success: false, message: err.message });
-	}
-});
-
-router.get("/getAllSpaces", async (req, res) => {
-	try {
-		// Find all spaces, including both parent spaces and subspaces
-		const allSpaces = await Space.find({});
-
-		res.status(200).json({
-			success: true,
-			message: "Todos los espacios obtenidos exitosamente",
-			spaces: allSpaces,
-		});
-	} catch (err) {
-		res.status(500).json({ success: false, message: err.message });
-	}
-});
-
 // Update a space
 router.patch("/updateSpace", async (req, res) => {
 	const { spaceId, fields, spaceUpdate, userName } = req.body;

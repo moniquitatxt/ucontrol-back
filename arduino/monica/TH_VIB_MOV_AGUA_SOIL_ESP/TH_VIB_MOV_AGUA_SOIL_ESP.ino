@@ -19,7 +19,7 @@ const char* ssid = "luisa";
 const char* password = "123luisa";
 
 //MQTT Server
-const char* mqtt_server = "192.168.250.6";
+const char* mqtt_server = "172.30.114.71";
 const char* mqtt_username = "ucontrol";
 const char* mqtt_password = "Ucontrol123";
 const int mqtt_port = 1884;
@@ -85,8 +85,8 @@ String dataIn;
 
 
 // Humedad del suelo
-const int AirValue = 720;
-const int WaterValue = 210;
+const int AirValue = 820;
+const int WaterValue = 360;
 int intervals = (AirValue - WaterValue) / 3;
 const int SoilSensorPin = A0;
 int soilMoistureValue = 0;
@@ -142,13 +142,13 @@ void setup() {
   delay(500);
   timeSync(TZ_INFO, "pool.ntp.org", "time.nis.gov");
 
-  if (influxClient.validateConnection()) {
-    Serial.print("Connected to InfluxDB: ");
-    Serial.println(influxClient.getServerUrl());
-  } else {
-    Serial.print("InfluxDB connection failed: ");
-    Serial.println(influxClient.getLastErrorMessage());
-  }
+  // if (influxClient.validateConnection()) {
+  //   Serial.print("Connected to InfluxDB: ");
+  //   Serial.println(influxClient.getServerUrl());
+  // } else {
+  //   Serial.print("InfluxDB connection failed: ");
+  //   Serial.println(influxClient.getLastErrorMessage());
+  // }
 
 
   NodeMCU_SS.begin(115200);
@@ -174,12 +174,12 @@ void loop() {
   // To Broker
 
   if (c == '\n') {
-    tempSensor.clearFields();
-    humSensor.clearFields();
-    waterSensor.clearFields();
-    movSensor.clearFields();
-    vibSensor.clearFields();
-    soilSensor.clearFields();
+    // tempSensor.clearFields();
+    // humSensor.clearFields();
+    // waterSensor.clearFields();
+    // movSensor.clearFields();
+    // vibSensor.clearFields();
+    // soilSensor.clearFields();
 
     Serial.println(dataIn);
 
@@ -189,7 +189,7 @@ void loop() {
 
 
       // Humedad del suelo (no viene de la arduino)
-      if ((strcmp(dataIn.c_str(), "Agua 1") != 0) && (strcmp(dataIn.c_str(), "Agua 0") != 0) && (strcmp(dataIn.c_str(), "Movimiento 1") != 0) && (strcmp(dataIn.c_str(), "Movimiento 0") != 0) && (strcmp(dataIn.c_str(), "Vibracion 1") != 0) && (strcmp(dataIn.c_str(), "Vibracion 0") != 0)) {
+      if (strcmp(dataIn.c_str(), "Soil") == 0) {
        soilMoistureValue = analogRead(SoilSensorPin);
        Serial.println(soilMoistureValue);
        soilmoisturepercent = map(soilMoistureValue, AirValue, WaterValue, 0, 100);
@@ -199,14 +199,14 @@ void loop() {
         client.publish(SOIL_TOPIC.c_str(), String(soilmoisturepercent).c_str());
 
         //envio a influx (quitar cuando estemos juntas)
-        soilSensor.addField("value", soilmoisturepercent);
-        Serial.println("");
-        Serial.print("Writing: ");
-        Serial.println(soilSensor.toLineProtocol());
-        if (!influxClient.writePoint(soilSensor)) {
-          Serial.print("InfluxDB soilSensor write failed: ");
-          Serial.println(influxClient.getLastErrorMessage());
-        }
+        // soilSensor.addField("value", soilmoisturepercent);
+        // Serial.println("");
+        // Serial.print("Writing: ");
+        // Serial.println(soilSensor.toLineProtocol());
+        // if (!influxClient.writePoint(soilSensor)) {
+        //   Serial.print("InfluxDB soilSensor write failed: ");
+        //   Serial.println(influxClient.getLastErrorMessage());
+        // }
         //fin influx
 
         //Temperatura y humedad (no vienen de la arduino)
@@ -217,45 +217,45 @@ void loop() {
         client.publish(TOPIC_TEMPERATURE.c_str(), String(temp).c_str());
         client.publish(TOPIC_HUMIDITY.c_str(), String(hum).c_str());
         //envio a influx (quitar cuando estemos juntas)
-        tempSensor.addField("value", String(temp).c_str());
-        humSensor.addField("value", String(hum).c_str());
-        Serial.println("");
-        Serial.print("Writing: ");
-        Serial.println(tempSensor.toLineProtocol());
-        Serial.println(humSensor.toLineProtocol());
-        if (!influxClient.writePoint(tempSensor)) {
-          Serial.print("InfluxDB tempSensor write failed: ");
-          Serial.println(influxClient.getLastErrorMessage());
-        }
-        if (!influxClient.writePoint(humSensor)) {
-          Serial.print("InfluxDB humSensor write failed: ");
-          Serial.println(influxClient.getLastErrorMessage());
-        }
+        // tempSensor.addField("value", String(temp).c_str());
+        // humSensor.addField("value", String(hum).c_str());
+        // Serial.println("");
+        // Serial.print("Writing: ");
+        // Serial.println(tempSensor.toLineProtocol());
+        // Serial.println(humSensor.toLineProtocol());
+        // if (!influxClient.writePoint(tempSensor)) {
+        //   Serial.print("InfluxDB tempSensor write failed: ");
+        //   Serial.println(influxClient.getLastErrorMessage());
+        // }
+        // if (!influxClient.writePoint(humSensor)) {
+        //   Serial.print("InfluxDB humSensor write failed: ");
+        //   Serial.println(influxClient.getLastErrorMessage());
+        // }
         //fin influx
       }
 
       //Movimiento (viene de la Arduino)
       if (strcmp(dataIn.c_str(), "Movimiento 1") == 0) {
         Serial.println("Motion detected!");
-        client.publish(MOV_TOPIC.c_str(), "1");
+        client.publish(MOV_TOPIC.c_str(), String(1).c_str());
 
-        //envio a influx (quitar cuando estemos juntas)
-        movSensor.addField("value", 1);
-        Serial.println("");
-        Serial.print("Writing: ");
-        Serial.println(movSensor.toLineProtocol());
-        if (!influxClient.writePoint(movSensor)) {
-          Serial.print("InfluxDB movSensor write failed: ");
-          Serial.println(influxClient.getLastErrorMessage());
-        }
-        //fin influx
+        // //envio a influx (quitar cuando estemos juntas)
+        // movSensor.addField("value", 1);
+        // Serial.println("");
+        // Serial.print("Writing: ");
+        // Serial.println(movSensor.toLineProtocol());
+        // if (!influxClient.writePoint(movSensor)) {
+        //   Serial.print("InfluxDB movSensor write failed: ");
+        //   Serial.println(influxClient.getLastErrorMessage());
+        // }
+        // //fin influx
       } else if (strcmp(dataIn.c_str(), "Movimiento 0") == 0) {
         Serial.println("NO Motion detected!");
-        client.publish(MOV_TOPIC.c_str(), "0");
+        client.publish(MOV_TOPIC.c_str(), String(0).c_str());
 
         //envio a influx (quitar cuando estemos juntas)
-        movSensor.addField("value", 0);
-        Serial.println("");
+        // movSensor.addField("value", 0);
+        // Serial.println("");
         // Serial.print("Writing: ");
         // Serial.println(movSensor.toLineProtocol());
       
@@ -265,24 +265,24 @@ void loop() {
       //Vibracion (viene de la arduino)
       if (strcmp(dataIn.c_str(), "Vibracion 1") == 0) {
         Serial.println("Vibracion detectada");
-        client.publish(VIB_TOPIC.c_str(), "1");
+        client.publish(VIB_TOPIC.c_str(), String(1).c_str());
         //envio a influx (quitar cuando estemos juntas)
-        vibSensor.addField("value", 1);
-        Serial.println("");
-        Serial.print("Writing: ");
-        Serial.println(vibSensor.toLineProtocol());
-        if (!influxClient.writePoint(vibSensor)) {
-          Serial.print("InfluxDB vibSensor write failed: ");
-          Serial.println(influxClient.getLastErrorMessage());
-        }
+        // vibSensor.addField("value", 1);
+        // Serial.println("");
+        // Serial.print("Writing: ");
+        // Serial.println(vibSensor.toLineProtocol());
+        // if (!influxClient.writePoint(vibSensor)) {
+        //   Serial.print("InfluxDB vibSensor write failed: ");
+        //   Serial.println(influxClient.getLastErrorMessage());
+        // }
         //fin influx
       } else if (strcmp(dataIn.c_str(), "Vibracion 0") == 0) {
-        client.publish(VIB_TOPIC.c_str(), "0");
+        client.publish(VIB_TOPIC.c_str(),String(0).c_str());
         //envio a influx (quitar cuando estemos juntas)
-        vibSensor.addField("value", 0);
-        Serial.println("");
-        Serial.print("Writing: ");
-        Serial.println(vibSensor.toLineProtocol());
+        // vibSensor.addField("value", 0);
+        // Serial.println("");
+        // Serial.print("Writing: ");
+        // Serial.println(vibSensor.toLineProtocol());
        
         //fin influx
       }
@@ -290,25 +290,25 @@ void loop() {
       //Agua (viene de la arduino)
       if (strcmp(dataIn.c_str(), "Agua 1") == 0) {
         Serial.println("Agua detectada");
-        client.publish(WATER_TOPIC.c_str(), "1");
+        client.publish(WATER_TOPIC.c_str(), String(1).c_str());
         //envio a influx (quitar cuando estemos juntas)
-        waterSensor.addField("value", 1);
-        Serial.println("");
-        Serial.print("Writing: ");
-        Serial.println(waterSensor.toLineProtocol());
+        // waterSensor.addField("value", 1);
+        // Serial.println("");
+        // Serial.print("Writing: ");
+        // Serial.println(waterSensor.toLineProtocol());
        
         //fin influx
       }
 
       else if (strcmp(dataIn.c_str(), "Agua 0") == 0) {
         Serial.println("Agua NO detectada");
-        client.publish(WATER_TOPIC.c_str(), "0");
+        client.publish(WATER_TOPIC.c_str(), String(0).c_str());
 
         //envio a influx (quitar cuando estemos juntas)
-        waterSensor.addField("value", 0);
-        Serial.println("");
-        Serial.print("Writing: ");
-        Serial.println(waterSensor.toLineProtocol());
+        // waterSensor.addField("value", 0);
+        // Serial.println("");
+        // Serial.print("Writing: ");
+        // Serial.println(waterSensor.toLineProtocol());
       
         //fin influx
       }

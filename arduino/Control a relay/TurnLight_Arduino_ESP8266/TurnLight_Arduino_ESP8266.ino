@@ -25,7 +25,7 @@ const char* password = "123luisa";
 
 
 //MQTT Server
-const char* mqtt_server = "192.168.250.6";
+const char* mqtt_server = "172.30.114.71";
 const char* mqtt_username = "ucontrol";
 const char* mqtt_password = "Ucontrol123";
 const int mqtt_port = 1884;
@@ -162,9 +162,9 @@ void loop() {
       lastMsg = now;
      
       if (dataIn == "1") {
-        client.publish(TOPIC.c_str(), "1");
+        client.publish(TOPIC.c_str(), String(1).c_str());
       } else if (dataIn == "0") {
-        client.publish(TOPIC.c_str(), "0");
+        client.publish(TOPIC.c_str(), String(0).c_str());
       }
     }
     c = 0;

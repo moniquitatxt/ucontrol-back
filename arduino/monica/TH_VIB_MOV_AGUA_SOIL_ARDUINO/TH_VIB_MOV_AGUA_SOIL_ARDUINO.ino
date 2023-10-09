@@ -122,7 +122,7 @@ void loop() {
 
   // Agua a la esp
   waterLevel = analogRead(WaterSensorPin);
-  if (waterLevel > 200) {
+  if (waterLevel > 250) {
     Serial.println("Agua presente");
     str = String("1");
     String espStr = "Agua " + str + String('\n');

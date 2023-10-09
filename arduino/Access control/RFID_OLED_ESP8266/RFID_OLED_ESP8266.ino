@@ -44,7 +44,7 @@ const char* password = "123luisa";
 
 
 //MQTT Server
-const char* mqtt_server = "192.168.250.6";
+const char* mqtt_server = "172.30.114.71";
 const char* mqtt_username = "ucontrol";
 const char* mqtt_password = "Ucontrol123";
 const int mqtt_port = 1884;

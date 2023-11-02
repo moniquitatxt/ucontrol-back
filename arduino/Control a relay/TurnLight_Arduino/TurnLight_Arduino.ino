@@ -1,21 +1,24 @@
 #include <SoftwareSerial.h>
 
-
 int relayPin = 3;
-
 SoftwareSerial Arduino_SoftSerial(10, 11);
 
-
-#define outPin 6
 String str;
 char c;
 String dataFromNodeMCU;
-
+int oldStatus = -1; // Inicializado a un valor no válido
 
 void ReceiveData() {
+  int status = digitalRead(relayPin);
+
+  if (status != oldStatus) { // Verifica si el estado del relé ha cambiado
+    oldStatus = status;
+    str = String(status);
+    String espStr = str + String('\n');
+    Arduino_SoftSerial.print(espStr);
+  }
 
   while (Arduino_SoftSerial.available() > 0) {
-
     c = Arduino_SoftSerial.read();
     if (c == '\n') {
       break;
@@ -26,17 +29,10 @@ void ReceiveData() {
 
   if (c == '\n') {
     Serial.println(dataFromNodeMCU);
-    if (dataFromNodeMCU.indexOf("1")>=0) {
-      str = String("1");
+    if (dataFromNodeMCU.indexOf("1") >= 0) {
       digitalWrite(relayPin, HIGH);
-      String espStr = str + String('\n');
-      Arduino_SoftSerial.print(espStr);
-
-    } else if (dataFromNodeMCU.indexOf("0")>=0) {
-      str = String("0");
+    } else if (dataFromNodeMCU.indexOf("0") >= 0) {
       digitalWrite(relayPin, LOW);
-      String espStr = str + String('\n');
-      Arduino_SoftSerial.print(espStr);
     }
     c = 0;
     dataFromNodeMCU = "";
@@ -45,27 +41,23 @@ void ReceiveData() {
 
 void setup() {
   Serial.begin(9600);
-
   Arduino_SoftSerial.begin(115200);
-
-  pinMode(relayPin, OUTPUT); //data pin for ambientlight sensor
-  pinMode(outPin, OUTPUT);
+  pinMode(relayPin, OUTPUT);
 }
 
 void loop() {
-
-  if (digitalRead(relayPin) == 1) {
-    str = String("1");
-    digitalWrite(relayPin, HIGH);
-    String espStr = str + String('\n');
-    Arduino_SoftSerial.print(espStr);
-  } else if (digitalRead(relayPin) == 0) {
-
-    str = String("0");
-    digitalWrite(relayPin, LOW);
-    String espStr = str + String('\n');
-    Arduino_SoftSerial.print(espStr);
-  }
-  delay(30000);
   ReceiveData();
+
+  // Lee desde la consola
+  if (Serial.available() > 0) {
+    char command = Serial.read();
+    if (command == '1') {
+      digitalWrite(relayPin, HIGH); // Enciende el relé
+      Serial.println("Relé encendido.");
+    } else if (command == '0') {
+      digitalWrite(relayPin, LOW); // Apaga el relé
+      Serial.println("Relé apagado.");
+    }
+  }
+  delay(5000); // Pequeña pausa para evitar lecturas continuas
 }

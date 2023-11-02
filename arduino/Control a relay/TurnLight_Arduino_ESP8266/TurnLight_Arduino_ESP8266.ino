@@ -25,7 +25,7 @@ const char* password = "123luisa";
 
 
 //MQTT Server
-const char* mqtt_server = "172.30.114.71";
+const char* mqtt_server = "172.24.62.241";
 const char* mqtt_username = "ucontrol";
 const char* mqtt_password = "Ucontrol123";
 const int mqtt_port = 1884;
@@ -123,14 +123,7 @@ void reconnect() {
 
 void setup() {
   Serial.begin(9600);
-
-
-  // delay(500);
-
-  // LittleFS.begin();
   setup_wifi();
-
-
   client.setServer(mqtt_server, mqtt_port);
   client.setCallback(callback);
   NodeMCU_SS.begin(115200);

@@ -9,9 +9,11 @@ int ysample = 0;
 int zsample = 0;
 const float zero_G = 512.0;
 const float escala = 102.3;
+bool vibrationDetected = false;
 
 // Movimiento
 const int PIRPin = 2;
+bool motionDetected = false;
 
 // Humedad del suelo
 const int AirValue = 650;
@@ -21,18 +23,18 @@ const int SoilSensorPin = A4;
 int soilMoistureValue = 0;
 int soilmoisturepercent = 0;
 
-
-//Agua
+// Agua
+#define POWER_PIN 7
 const int WaterSensorPin = A0;
-int waterLevel = 0;
+bool waterDetected = false;
 
 SoftwareSerial Arduino_SoftSerial(10, 11);
 String str;
 
+
 void setup() {
   Serial.begin(9600);
   analogReference(EXTERNAL);
-
 
   pinMode(PIRPin, INPUT);
 
@@ -41,7 +43,8 @@ void setup() {
   pinMode(zpin, INPUT);
 
   pinMode(WaterSensorPin, INPUT);
-
+  pinMode(POWER_PIN, OUTPUT);    // configure D7 pin as an OUTPUT
+  digitalWrite(POWER_PIN, LOW);  // turn the sensor OFF
 
 
   Arduino_SoftSerial.begin(115200);
@@ -49,17 +52,13 @@ void setup() {
 }
 
 void loop() {
-
-  //Movimiento
+  // Movimiento
   int PIRvalue = digitalRead(PIRPin);
 
-
-  //VIBRACIONES
+  // Vibraciones
   int x = analogRead(xpin);
-
   delay(1);
   int y = analogRead(ypin);
-
   delay(1);
   int z = analogRead(zpin);
 
@@ -67,77 +66,60 @@ void loop() {
   float yValue = ((float)y - zero_G) / escala;
   float zValue = ((float)z - zero_G) / escala;
 
-  Serial.print(xValue);
-  Serial.print("\t");
-
-  Serial.print(yValue);
-  Serial.print("\t");
-
-  Serial.print(zValue);
-  Serial.print("\n");
-
-  //Envio vibraciones a la ESP
-
+  // Detección de vibraciones
   if ((xValue > 2.6) || (yValue > 2.7) || (zValue > 1.6)) {
-    Serial.println("Vibracion detectada");
-    str = String("1");
-    String espStr = "Vibracion " + str + String('\n');
-    Arduino_SoftSerial.print(espStr);
-    delay(5000);
-    str = "";
+    if (!vibrationDetected) {
+      vibrationDetected = true;
+      sendToESP("Vibracion", "1");
+    }
   } else {
-    Serial.println("NO hay Vibracion detectada");
-    str = String("0");
-    String espStr = "Vibracion " + str + String('\n');
-    Arduino_SoftSerial.print(espStr);
-    delay(5000);
-    str = "";
+    if (vibrationDetected) {
+      vibrationDetected = false;
+      sendToESP("Vibracion", "0");
+    }
   }
 
-  //Movimiento a la esp
+  // Detección de movimiento
   if (PIRvalue == HIGH) {
-    Serial.println("Motion detected!");
-    str = String("1");
-    String espStr = "Movimiento " + str + String('\n');
-    Arduino_SoftSerial.print(espStr);
-    delay(5000);
-    str = "";
-    delay(5000);
+    if (!motionDetected) {
+      motionDetected = true;
+      sendToESP("Movimiento", "1");
+    }
   } else {
-    Serial.println("NO Motion detected!");
-    str = String("0");
-    String espStr = "Movimiento " + str + String('\n');
-    Arduino_SoftSerial.print(espStr);
-    delay(5000);
-    str = "";
+    if (motionDetected) {
+      motionDetected = false;
+      sendToESP("Movimiento", "0");
+    }
   }
 
+  // Detección de humedad del suelo (sin cambios significativos detectados)
+  sendToESP("Soil", "");
+  
+  // Detección de agua
+  digitalWrite(POWER_PIN, HIGH);  // turn the sensor ON
+  delay(10);
+  int waterLevel = analogRead(WaterSensorPin);
+  digitalWrite(POWER_PIN, LOW);  // turn the sensor OFF
 
-  if (soilmoisturepercent >= 0) {
-    String espStr = "Soil" + String('\n');
-    Arduino_SoftSerial.print(espStr);
-    delay(5000);
-    str = "";
-  }
-
-  // Agua a la esp
-  waterLevel = analogRead(WaterSensorPin);
+  //Serial.println(waterLevel);
   if (waterLevel > 250) {
-    Serial.println("Agua presente");
-    str = String("1");
-    String espStr = "Agua " + str + String('\n');
-    Arduino_SoftSerial.print(espStr);
-    delay(5000);
-    str = "";
+    if (!waterDetected) {
+      waterDetected = true;
+      sendToESP("Agua", "1");
+    }
   } else {
-    Serial.println("No hay agua");
-    str = String("0");
-    String espStr = "Agua " + str + String('\n');
-    Arduino_SoftSerial.print(espStr);
-    delay(5000);
-    str = "";
+    if (waterDetected) {
+      waterDetected = false;
+      sendToESP("Agua", "0");
+    }
   }
-  Serial.println("----------------");
 
-  delay(5000);
+  delay(3000);
+}
+
+void sendToESP(String sensor, String value) {
+  String espStr = sensor + " " + value + "\n";
+  Arduino_SoftSerial.print(espStr);
+  Serial.println(espStr);
+  delay(1000);
 }

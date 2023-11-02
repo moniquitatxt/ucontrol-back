@@ -22,7 +22,10 @@ const UserSchema = new mongoose.Schema({
 	admin: {
 		type: Boolean,
 		unique: false,
-	}
+	},
+	notifications: {
+		type: Boolean,
+	},
 });
 
 const User = mongoose.model("Users", UserSchema);

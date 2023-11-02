@@ -57,15 +57,19 @@ client.on("message", (topic, message) => {
 	} else {
 		const topico = topic.toString();
 		const mensaje = message.toString();
+		console.log(mensaje);
+		console.log(topico);
 		const valor = parseFloat(mensaje);
+		if (!isNaN(valor)) {
+			const point = new Point(topico).floatField("value", valor);
 
-		const point = new Point(topico).floatField("value", valor);
-		//console.log(` ${point}`);
-
-		writeApi.writePoint(point);
-		writeApi.close().then(() => {
-			console.log(` Registrado ${point}`);
-		});
+			writeApi.writePoint(point);
+			writeApi.close().then(() => {
+				console.log(` Registrado ${point}`);
+			});
+		} else {
+			console.log("No es un número");
+		}
 	}
 });
 

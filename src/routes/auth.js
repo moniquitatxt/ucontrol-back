@@ -29,15 +29,6 @@ router.post("/createUser", async (req, res) => {
 		const user = new User({ name, email, registered: false });
 		await user.save();
 
-		const mailOptions = {
-			from: "ucontrol.iotsystem@gmail.com",
-			to: email,
-			subject: "Invitación al sistema Ucontrol",
-			text: `Hola! Usted su correo ha sido registrado en el sistema, por favor ingresa para crear tu contraseña y completar tu registro`,
-		};
-
-		const info = await transporter.sendMail(mailOptions);
-
 		res.status(201).json({
 			success: true,
 			message: "La invitación se ha enviado exitosamente",

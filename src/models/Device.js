@@ -14,6 +14,7 @@ const ConditionSchema = new mongoose.Schema({
 	conditionValue: { type: String },
 	secondConditionValue: { type: String },
 	instruction: { type: String },
+	sentInstruction: { type: Date },
 });
 
 const DeviceSchema = new mongoose.Schema({

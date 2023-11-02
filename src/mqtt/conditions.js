@@ -1,7 +1,7 @@
 import mqtt from "mqtt";
 import dotenv from "dotenv";
 import Device from "../models/Device.js";
-import e from "express";
+import nodemailer from "nodemailer";
 dotenv.config();
 
 const ip = process.env.IP;
@@ -52,10 +52,58 @@ function checkCondition(value, operator, conditionValue) {
 	}
 }
 
-function performAction(topic, instruction) {
-	console.log(
-		"Se envió al tópico " + topic + " la siguiente instrucción: " + instruction
-	);
+async function performAction(sentDate, topic, instruction) {
+	const nowDate = new Date();
+	const difference = (nowDate - sentDate) / (1000 * 60 * 60);
+	if (difference > 1) {
+		console.log(
+			"Se envió al tópico " +
+				topic +
+				" la siguiente instrucción: " +
+				instruction
+		);
+		const transporter = nodemailer.createTransport({
+			service: "Gmail",
+			auth: {
+				user: "ucontrol.iotsystem@gmail.com",
+				pass: "jhszraxaqmsmrdpl",
+			},
+		});
+
+		const mailOptions = {
+			from: "ucontrol.iotsystem@gmail.com",
+			to: spaceCreator.email, // Correo del creador del espacio
+			subject: "Acción enviada al dispositivo",
+			html: `
+				<html>
+					<head>
+						<style>
+							body {
+								font-family: Arial, sans-serif;
+								background-color: #f4f4f4;
+							}
+							.container {
+								max-width: 600px;
+								margin: 0 auto;
+								padding: 20px;
+								background-color: #ffffff;
+							}
+						</style>
+					</head>
+					<body>
+						<div class="container">
+							<h2>Hola ,</h2>
+							<p>.</p>
+							<!-- Add more content here -->
+						</div>
+					</body>
+				</html>
+			`,
+		};
+
+		const info = await transporter.sendMail(mailOptions);
+	}
+
 	conditions.publish(topic + " / Switch", instruction, {
 		qos: 1,
 	});
@@ -84,7 +132,11 @@ conditions.on("message", async (topic, message) => {
 			valorCondicion = parseFloat(device.conditions.conditionValue);
 
 			if (checkCondition(valor, device.conditions.condition, valorCondicion)) {
-				performAction(device.topic, device.conditions.instruction);
+				performAction(
+					device.conditions.sentInstruction,
+					device.topic,
+					device.conditions.instruction
+				);
 			} else {
 				console.log("La condición no se cumple");
 			}
@@ -93,7 +145,11 @@ conditions.on("message", async (topic, message) => {
 			if (
 				checkCondition(valor, secondDevice.conditions.condition, valorCondicion)
 			) {
-				performAction(secondDevice.topic, secondDevice.conditions.instruction);
+				performAction(
+					secondDevice.conditions.sentInstruction,
+					secondDevice.topic,
+					secondDevice.conditions.instruction
+				);
 			} else {
 				console.log("La condición no se cumple");
 			}
